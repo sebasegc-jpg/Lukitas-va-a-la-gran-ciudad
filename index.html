@@ -13,7 +13,7 @@
 
     <style>
         :root {
-            --bg-color: #f8fafc;
+            --bg-color: #f1f5f9;
             --card-bg: #ffffff;
             --primary: #2563eb;
             --primary-hover: #1d4ed8;
@@ -29,28 +29,52 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-dark); display: flex; flex-direction: column; min-height: 100vh; }
 
+        /* Header compacto y limpio para ganar espacio en celular */
         header { background-color: var(--card-bg); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        .header-content { max-width: 1400px; margin: 0 auto; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;}
-        .logo { font-weight: 700; font-size: 1.25rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem; }
+        .header-content { max-width: 1400px; margin: 0 auto; padding: 0.5rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;}
+        .logo { font-weight: 700; font-size: 1.05rem; color: var(--primary); display: flex; align-items: center; gap: 0.4rem; }
         
         .external-links { display: flex; gap: 0.5rem; }
-        .ext-btn { text-decoration: none; font-size: 0.8rem; font-weight: 600; padding: 0.4rem 0.8rem; border-radius: 0.375rem; border: 1px solid var(--border); color: var(--text-dark); background: #f1f5f9; transition: all 0.2s; }
+        .ext-btn { text-decoration: none; font-size: 0.75rem; font-weight: 600; padding: 0.3rem 0.6rem; border-radius: 0.375rem; border: 1px solid var(--border); color: var(--text-dark); background: #f1f5f9; transition: all 0.2s; }
         .ext-btn:hover { background: #e2e8f0; }
 
-        .nav-tabs { display: flex; gap: 0.5rem; background: #f1f5f9; padding: 0.25rem; border-radius: 0.5rem; flex-wrap: wrap; }
-        .tab-btn { border: none; background: transparent; padding: 0.6rem 1.2rem; border-radius: 0.375rem; font-weight: 600; font-size: 0.875rem; color: var(--text-muted); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem; }
+        /* Menú de solapas horizontal desplazable (scroll) para que no ocupe media pantalla */
+        .nav-tabs { display: flex; gap: 0.4rem; background: #f1f5f9; padding: 0.2rem; border-radius: 0.5rem; overflow-x: auto; width: 100%; white-space: nowrap; scrollbar-width: none; }
+        .nav-tabs::-webkit-scrollbar { display: none; }
+        .tab-btn { border: none; background: transparent; padding: 0.4rem 0.8rem; border-radius: 0.375rem; font-weight: 600; font-size: 0.8rem; color: var(--text-muted); cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem; flex-shrink: 0; }
         .tab-btn.active { background-color: var(--card-bg); color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
-        main { max-width: 1400px; margin: 1.5rem auto; padding: 0 1.5rem; width: 100%; flex: 1; }
-        .tab-content { display: none; background-size: cover; background-position: center; border-radius: 8px; padding: 1rem; }
+        main { max-width: 1400px; margin: 1rem auto; padding: 0 1rem; width: 100%; flex: 1; }
+        
+        /* Sistema de pestañas con Banner Superior a Color Grande y Limpio */
+        .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        /* Rutas actualizadas a tus imágenes locales de GitHub */
-        .tab-bg-itinerario { background-image: linear-gradient(rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.92)), url('itinerario.png'); }
-        .tab-bg-mapa { background-image: linear-gradient(rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.92)), url('mapa.png'); }
-        .tab-bg-recom { background-image: linear-gradient(rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.92)), url('recom.png'); }
-        .tab-bg-shows { background-image: linear-gradient(rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.92)), url('shows.png'); }
-        .tab-bg-gastos { background-image: linear-gradient(rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.92)), url('gastos.png'); }
+        .tab-banner {
+            width: 100%;
+            height: 260px;
+            background-size: cover;
+            background-position: center;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border: 2px solid #ffffff;
+        }
+
+        /* Imágenes de portada dedicadas para cada pestaña */
+        .banner-itinerario { background-image: url('itinerario.png'); }
+        .banner-mapa { background-image: url('mapa.png'); }
+        .banner-recom { background-image: url('recom.png'); }
+        .banner-shows { background-image: url('shows.png'); }
+        .banner-gastos { background-image: url('gastos.png'); }
+
+        .tab-inner-container {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.2rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
 
         .week-selector { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
         .week-btn { background: var(--card-bg); border: 1px solid var(--border); padding: 0.4rem 0.8rem; border-radius: 0.375rem; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
@@ -138,239 +162,254 @@
     <header>
         <div class="header-content">
             <div class="logo">
-                <i class="fa-solid fa-city"></i> Lukitas va a la gran ciudad (Buenos Aires)
+                <i class="fa-solid fa-city"></i> Lukitas va a CABA
             </div>
             
-            <nav class="nav-tabs">
-                <button class="tab-btn active" onclick="switchTab('calendario', event)">
-                    <i class="fa-regular fa-calendar-days"></i> Itinerario 24hs
-                </button>
-                <button class="tab-btn" onclick="switchTab('transporte', event)">
-                    <i class="fa-solid fa-bus"></i> Mapa & Subte/Bondis
-                </button>
-                <button class="tab-btn" onclick="switchTab('reels', event)">
-                    <i class="fa-solid fa-utensils"></i> Recomendaciones CABA
-                </button>
-                <button class="tab-btn" onclick="switchTab('shows', event)">
-                    <i class="fa-solid fa-guitar"></i> El Recital & Shows
-                </button>
-                <button class="tab-btn" onclick="switchTab('gastos', event)">
-                    <i class="fa-solid fa-money-bill-transfer"></i> Gastos (ARS / USD)
-                </button>
-            </nav>
-
             <div class="external-links">
-                <a href="https://docs.google.com/spreadsheets/d/1IpVyZts6sthWAEfBHqCcXdzCI3f7uwwEkFwrkRdHyVE/edit" target="_blank" class="ext-btn"><i class="fa-solid fa-table"></i> Google Sheet (Lukitas)</a>
+                <a href="https://docs.google.com/spreadsheets/d/1IpVyZts6sthWAEfBHqCcXdzCI3f7uwwEkFwrkRdHyVE/edit" target="_blank" class="ext-btn"><i class="fa-solid fa-table"></i> Google Sheet</a>
             </div>
         </div>
+        <!-- Menú de solapas desplazable en horizontal para ahorrar espacio vertical -->
+        <nav class="nav-tabs">
+            <button class="tab-btn active" onclick="switchTab('calendario', event)">
+                <i class="fa-regular fa-calendar-days"></i> Itinerario
+            </button>
+            <button class="tab-btn" onclick="switchTab('transporte', event)">
+                <i class="fa-solid fa-bus"></i> Mapa & Subte
+            </button>
+            <button class="tab-btn" onclick="switchTab('reels', event)">
+                <i class="fa-solid fa-utensils"></i> Recomendaciones
+            </button>
+            <button class="tab-btn" onclick="switchTab('shows', event)">
+                <i class="fa-solid fa-guitar"></i> El Recital & Shows
+            </button>
+            <button class="tab-btn" onclick="switchTab('gastos', event)">
+                <i class="fa-solid fa-money-bill-transfer"></i> Gastos
+            </button>
+        </nav>
     </header>
 
     <main>
         <!-- ITINERARIO -->
-        <section id="calendario" class="tab-content tab-bg-itinerario active">
-            <div class="schedule-controls">
-                <div>
-                    <h3>Distribución Horaria en CABA</h3>
-                    <div class="week-selector" id="week-selector-container" style="margin-top:0.5rem;">
-                        <span style="font-size:0.85rem; font-weight:600;">Semana:</span>
+        <section id="calendario" class="tab-content active">
+            <div class="tab-banner banner-itinerario"></div>
+            <div class="tab-inner-container">
+                <div class="schedule-controls">
+                    <div>
+                        <h3>Distribución Horaria en CABA</h3>
+                        <div class="week-selector" id="week-selector-container" style="margin-top:0.5rem;">
+                            <span style="font-size:0.85rem; font-weight:600;">Semana:</span>
+                        </div>
                     </div>
+                    <button class="btn-add-event" onclick="openAddModal()"><i class="fa-solid fa-plus"></i> Añadir Actividad</button>
                 </div>
-                <button class="btn-add-event" onclick="openAddModal()"><i class="fa-solid fa-plus"></i> Añadir Actividad</button>
-            </div>
 
-            <div class="pending-events-container" id="pending-container">
-                <div class="pending-events-header">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                    <span>Actividades sin hora asignada o pendientes</span>
+                <div class="pending-events-container" id="pending-container">
+                    <div class="pending-events-header">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>Actividades sin hora asignada o pendientes</span>
+                    </div>
+                    <div class="pending-grid" id="pending-grid-list"></div>
                 </div>
-                <div class="pending-grid" id="pending-grid-list"></div>
-            </div>
 
-            <div class="schedule-grid-container">
-                <table class="schedule-table">
-                    <thead>
-                        <tr id="table-header-days"></tr>
-                    </thead>
-                    <tbody id="grid-body"></tbody>
-                </table>
+                <div class="schedule-grid-container">
+                    <table class="schedule-table">
+                        <thead>
+                            <tr id="table-header-days"></tr>
+                        </thead>
+                        <tbody id="grid-body"></tbody>
+                    </table>
+                </div>
             </div>
         </section>
 
         <!-- MAPA, SUBTE Y COLECTIVOS -->
-        <section id="transporte" class="tab-content tab-bg-mapa">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom:0.8rem;">
-                <div>
-                    <h3>Mapa, Subtes y Rutas en CABA / AMBA</h3>
-                    <p style="color: var(--text-muted); font-size:0.85rem;">Movilidad rápida, líneas de colectivo recomendadas y mapa interactivo.</p>
+        <section id="transporte" class="tab-content">
+            <div class="tab-banner banner-mapa"></div>
+            <div class="tab-inner-container">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom:0.8rem;">
+                    <div>
+                        <h3>Mapa, Subtes y Rutas en CABA / AMBA</h3>
+                        <p style="color: var(--text-muted); font-size:0.85rem;">Movilidad rápida, líneas de colectivo recomendadas y mapa interactivo.</p>
+                    </div>
+                    <div class="zone-filters" style="margin-bottom:0;">
+                        <button class="filter-btn" onclick="zoomMapTo('caba_centro')">📍 Centro / Obelisco</button>
+                        <button class="filter-btn" onclick="zoomMapTo('palermo')">📍 Palermo / Recoleta</button>
+                        <button class="filter-btn" onclick="zoomMapTo('belgrano')">📍 Belgrano / River</button>
+                        <button class="filter-btn" onclick="zoomMapTo('amba_norte')">🚆 AMBA Norte</button>
+                        <button class="filter-btn active" onclick="zoomMapTo('all')">🗺️️ Ver Todo el AMBA</button>
+                    </div>
                 </div>
-                <div class="zone-filters" style="margin-bottom:0;">
-                    <button class="filter-btn" onclick="zoomMapTo('caba_centro')">📍 Centro / Obelisco</button>
-                    <button class="filter-btn" onclick="zoomMapTo('palermo')">📍 Palermo / Recoleta</button>
-                    <button class="filter-btn" onclick="zoomMapTo('belgrano')">📍 Belgrano / River</button>
-                    <button class="filter-btn" onclick="zoomMapTo('amba_norte')">🚆 AMBA Norte</button>
-                    <button class="filter-btn active" onclick="zoomMapTo('all')">🗺️ Ver Todo el AMBA</button>
-                </div>
-            </div>
 
-            <div class="subway-guide">
-                <h4 style="color:#1e40af; margin-bottom:0.4rem;"><i class="fa-solid fa-train-subway"></i> Guía Rápida de Red de Subtes (Llevá tu Tarjeta SUBE cargada)</h4>
-                <p style="font-size:0.8rem; color:#334155;">
-                    <span class="subway-line line-A">Línea A</span> Plaza de Mayo ⇆ San Pedrito (Congreso, Caballito) | 
-                    <span class="subway-line line-B">Línea B</span> Leandro N. Alem ⇆ J.M. de Rosas (Corrientes, Teatros, Chacarita) | 
-                    <span class="subway-line line-D">Línea D</span> Catedral ⇆ Congreso de Tucumán (Palermo, Belgrano, Estadio River Plate)
-                </p>
-                <p style="font-size:0.75rem; color:#64748b; margin-top:4px;">💡 <b>Consejo Movilidad:</b> Para trayectos nocturnos post-recital, el colectivo (Metrobús) opera 24hs. Consultá Google Maps o la app Moovit en tiempo real.</p>
-            </div>
-            
-            <div class="map-layout">
-                <div class="map-container">
-                    <div id="leaflet-map"></div>
+                <div class="subway-guide">
+                    <h4 style="color:#1e40af; margin-bottom:0.4rem;"><i class="fa-solid fa-train-subway"></i> Guía Rápida de Red de Subtes (Llevá tu Tarjeta SUBE cargada)</h4>
+                    <p style="font-size:0.8rem; color:#334155;">
+                        <span class="subway-line line-A">Línea A</span> Plaza de Mayo ⇆ San Pedrito (Congreso, Caballito) | 
+                        <span class="subway-line line-B">Línea B</span> Leandro N. Alem ⇆ J.M. de Rosas (Corrientes, Teatros, Chacarita) | 
+                        <span class="subway-line line-D">Línea D</span> Catedral ⇆ Congreso de Tucumán (Palermo, Belgrano, Estadio River Plate)
+                    </p>
+                    <p style="font-size:0.75rem; color:#64748b; margin-top:4px;">💡 <b>Consejo Movilidad:</b> Para trayectos nocturnos post-recital, el colectivo (Metrobús) opera 24hs. Consultá Google Maps o la app Moovit en tiempo real.</p>
                 </div>
                 
-                <div class="timeline-container">
-                    <h4 style="margin-bottom:0.8rem; color:var(--text-dark); border-bottom:2px solid var(--border); padding-bottom:0.4rem;">
-                        📅 Cronología de Recorrido
-                    </h4>
-                    <div id="timeline-list"></div>
+                <div class="map-layout">
+                    <div class="map-container">
+                        <div id="leaflet-map"></div>
+                    </div>
+                    
+                    <div class="timeline-container">
+                        <h4 style="margin-bottom:0.8rem; color:var(--text-dark); border-bottom:2px solid var(--border); padding-bottom:0.4rem;">
+                            📅 Cronología de Recorrido
+                        </h4>
+                        <div id="timeline-list"></div>
+                    </div>
                 </div>
             </div>
         </section>
 
         <!-- RECOMENDACIONES -->
-        <section id="reels" class="tab-content tab-bg-recom">
-            <h3>Bodegones, Ropa, Anime & Parques en Buenos Aires</h3>
-            <p style="color: var(--text-muted); margin-bottom: 0.8rem;">Buscá o guardá recomendaciones gastronómicas, compras y paseos:</p>
+        <section id="reels" class="tab-content">
+            <div class="tab-banner banner-recom"></div>
+            <div class="tab-inner-container">
+                <h3>Bodegones, Ropa, Anime & Parques en Buenos Aires</h3>
+                <p style="color: var(--text-muted); margin-bottom: 0.8rem;">Buscá o guardá recomendaciones gastronómicas, compras y paseos:</p>
 
-            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.8rem; max-width: 600px;">
-                <input type="text" id="custom-recom-input" placeholder="Ej: Bodegones en Palermo, tiendas de manga en Abasto, ropa en Avellaneda..." style="flex: 1; padding: 0.6rem; border: 1px solid var(--border); border-radius: 6px;">
-                <button onclick="searchCustomAI('recom')" style="background: var(--primary); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; font-weight: 600;">🔍 Buscar Recomendación</button>
-            </div>
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 0.8rem; max-width: 600px;">
+                    <input type="text" id="custom-recom-input" placeholder="Ej: Bodegones en Palermo, tiendas de manga en Abasto, ropa en Avellaneda..." style="flex: 1; padding: 0.6rem; border: 1px solid var(--border); border-radius: 6px;">
+                    <button onclick="searchCustomAI('recom')" style="background: var(--primary); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; font-weight: 600;">🔍 Buscar Recomendación</button>
+                </div>
 
-            <div class="compact-accordion-list" id="recom-container">
-                <p style="color: var(--text-muted);">Cargando recomendaciones...</p>
+                <div class="compact-accordion-list" id="recom-container">
+                    <p style="color: var(--text-muted);">Cargando recomendaciones...</p>
+                </div>
             </div>
         </section>
 
         <!-- SHOWS & RECITAL -->
-        <section id="shows" class="tab-content tab-bg-shows">
-            <h3>Guía y Recomendaciones para el Recital & Eventos</h3>
-            <p style="color: var(--text-muted); margin-bottom: 0.8rem;">Información sobre el concierto, accesos, transporte de regreso y fechas de shows:</p>
+        <section id="shows" class="tab-content">
+            <div class="tab-banner banner-shows"></div>
+            <div class="tab-inner-container">
+                <h3>Guía y Recomendaciones para el Recital & Eventos</h3>
+                <p style="color: var(--text-muted); margin-bottom: 0.8rem;">Información sobre el concierto, accesos, transporte de regreso y fechas de shows:</p>
 
-            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.8rem; max-width: 600px;">
-                <input type="text" id="custom-shows-input" placeholder="Ej: Consejos de llegada a Movistar Arena / River, bandas teloneras..." style="flex: 1; padding: 0.6rem; border: 1px solid var(--border); border-radius: 6px;">
-                <button onclick="searchCustomAI('shows')" style="background: #be185d; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; font-weight: 600;">🎟️ Buscar Info de Show</button>
-            </div>
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 0.8rem; max-width: 600px;">
+                    <input type="text" id="custom-shows-input" placeholder="Ej: Consejos de llegada a Movistar Arena / River, bandas teloneras..." style="flex: 1; padding: 0.6rem; border: 1px solid var(--border); border-radius: 6px;">
+                    <button onclick="searchCustomAI('shows')" style="background: #be185d; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; font-weight: 600;">🎟️ Buscar Info de Show</button>
+                </div>
 
-            <div class="compact-accordion-list" id="shows-container">
-                <p style="color: var(--text-muted);">Cargando eventos y guía del recital...</p>
+                <div class="compact-accordion-list" id="shows-container">
+                    <p style="color: var(--text-muted);">Cargando eventos y guía del recital...</p>
+                </div>
             </div>
         </section>
 
         <!-- GASTOS -->
-        <section id="gastos" class="tab-content tab-bg-gastos">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
-                <div>
-                    <h3>Control de Gastos & Presupuesto (ARS / USD)</h3>
-                    <p style="color: var(--text-muted); font-size: 0.85rem;">Cuentas claras del viaje entre Lukitas y su acompañante.</p>
+        <section id="gastos" class="tab-content">
+            <div class="tab-banner banner-gastos"></div>
+            <div class="tab-inner-container">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                    <div>
+                        <h3>Control de Gastos & Presupuesto (ARS / USD)</h3>
+                        <p style="color: var(--text-muted); font-size: 0.85rem;">Cuentas claras del viaje entre Lukitas y su acompañante.</p>
+                    </div>
+                    <button onclick="resetTravelers()" style="background:#f1f5f9; border:1px solid var(--border); padding:0.4rem 0.8rem; border-radius:6px; cursor:pointer; font-size:0.8rem; font-weight:600;">
+                        👤 Cambiar Nombres de Viajeros
+                    </button>
                 </div>
-                <button onclick="resetTravelers()" style="background:#f1f5f9; border:1px solid var(--border); padding:0.4rem 0.8rem; border-radius:6px; cursor:pointer; font-size:0.8rem; font-weight:600;">
-                    👤 Cambiar Nombres de Viajeros
-                </button>
-            </div>
 
-            <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:1rem; border-radius:8px; margin-bottom:1.5rem;">
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.5rem;">
-                    <h4 style="color:#166534;"><i class="fa-solid fa-calculator"></i> Conversor Rápido (Pesos ARS ⇆ Dólar USD)</h4>
-                    <span id="rate-indicator" style="font-size:0.75rem; background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:12px; font-weight:bold;">Tasa estimada: 1 USD = $1250 ARS</span>
-                </div>
-                <div style="display:flex; gap:1rem; align-items:center; flex-wrap:wrap;">
-                    <div style="flex:1; min-width:140px;">
-                        <label style="font-size:0.75rem; font-weight:bold; color:#166534;">Pesos Argentinos (ARS):</label>
-                        <input type="number" id="calc-ars" placeholder="$ 50000 ARS" oninput="convertCurrency('ars')" style="width:100%; padding:0.4rem; border:1px solid #86efac; border-radius:4px; font-weight:bold;">
+                <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:1rem; border-radius:8px; margin-bottom:1.5rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.5rem;">
+                        <h4 style="color:#166534;"><i class="fa-solid fa-calculator"></i> Conversor Rápido (Pesos ARS ⇆ Dólar USD)</h4>
+                        <span id="rate-indicator" style="font-size:0.75rem; background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:12px; font-weight:bold;">Tasa estimada: 1 USD = $1250 ARS</span>
                     </div>
-                    <div style="font-size:1.2rem; font-weight:bold; color:#166534; margin-top:12px;">⇆</div>
-                    <div style="flex:1; min-width:140px;">
-                        <label style="font-size:0.75rem; font-weight:bold; color:#166534;">Dólares (USD):</label>
-                        <input type="number" id="calc-usd" placeholder="$ 40 USD" oninput="convertCurrency('usd')" style="width:100%; padding:0.4rem; border:1px solid #86efac; border-radius:4px; font-weight:bold;">
+                    <div style="display:flex; gap:1rem; align-items:center; flex-wrap:wrap;">
+                        <div style="flex:1; min-width:140px;">
+                            <label style="font-size:0.75rem; font-weight:bold; color:#166534;">Pesos Argentinos (ARS):</label>
+                            <input type="number" id="calc-ars" placeholder="$ 50000 ARS" oninput="convertCurrency('ars')" style="width:100%; padding:0.4rem; border:1px solid #86efac; border-radius:4px; font-weight:bold;">
+                        </div>
+                        <div style="font-size:1.2rem; font-weight:bold; color:#166534; margin-top:12px;">⇆</div>
+                        <div style="flex:1; min-width:140px;">
+                            <label style="font-size:0.75rem; font-weight:bold; color:#166534;">Dólares (USD):</label>
+                            <input type="number" id="calc-usd" placeholder="$ 40 USD" oninput="convertCurrency('usd')" style="width:100%; padding:0.4rem; border:1px solid #86efac; border-radius:4px; font-weight:bold;">
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
-                <form id="expense-form" onsubmit="addExpense(event)" style="background:#fff; padding:1.2rem; border-radius:8px; border:1px solid var(--border); flex:1; min-width:300px;">
-                    <h4 style="margin-bottom:1rem; color:var(--text-dark);">➕ Registrar Nuevo Gasto</h4>
-                    <div class="form-group">
-                        <label>Fecha:</label>
-                        <input type="date" id="exp-date" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Concepto / Detalle:</label>
-                        <input type="text" id="exp-concept" required placeholder="Ej: Entradas Recital / Hotel / Cena Bodegón / SUBE">
-                    </div>
-                    
-                    <div style="display: flex; gap: 0.5rem;">
-                        <div class="form-group" style="flex:1;">
-                            <label>Moneda:</label>
-                            <select id="exp-currency">
-                                <option value="ARS">Pesos ($ ARS)</option>
-                                <option value="USD">Dólares ($ USD)</option>
+                <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+                    <form id="expense-form" onsubmit="addExpense(event)" style="background:#fff; padding:1.2rem; border-radius:8px; border:1px solid var(--border); flex:1; min-width:300px;">
+                        <h4 style="margin-bottom:1rem; color:var(--text-dark);">➕ Registrar Nuevo Gasto</h4>
+                        <div class="form-group">
+                            <label>Fecha:</label>
+                            <input type="date" id="exp-date" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Concepto / Detalle:</label>
+                            <input type="text" id="exp-concept" required placeholder="Ej: Entradas Recital / Hotel / Cena Bodegón / SUBE">
+                        </div>
+                        
+                        <div style="display: flex; gap: 0.5rem;">
+                            <div class="form-group" style="flex:1;">
+                                <label>Moneda:</label>
+                                <select id="exp-currency">
+                                    <option value="ARS">Pesos ($ ARS)</option>
+                                    <option value="USD">Dólares ($ USD)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="flex:1.5;">
+                                <label>Monto Ingresado:</label>
+                                <input type="number" step="0.01" id="exp-amount" required placeholder="Ej: 15000">
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 0.5rem;">
+                            <div class="form-group" style="flex:1;">
+                                <label>Pagado por:</label>
+                                <select id="exp-payer"></select>
+                            </div>
+                            <div class="form-group" style="flex:1;">
+                                <label>¿Cómo se divide?:</label>
+                                <select id="exp-split">
+                                    <option value="both">Compartido (50% / 50%)</option>
+                                    <option value="p1_only">Solo Pagador 1</option>
+                                    <option value="p2_only">Solo Pagador 2</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Categoría:</label>
+                            <select id="exp-category">
+                                <option value="Entradas">Entradas / Recitales / Shows</option>
+                                <option value="Transporte">Transporte / SUBE / Uber / Pasajes</option>
+                                <option value="Comida">Comida / Bodegones / Bares</option>
+                                <option value="Alojamiento">Alojamiento / Hotel</option>
+                                <option value="Compras">Compras / Manga / Ropa / Souvenirs</option>
                             </select>
                         </div>
-                        <div class="form-group" style="flex:1.5;">
-                            <label>Monto Ingresado:</label>
-                            <input type="number" step="0.01" id="exp-amount" required placeholder="Ej: 15000">
+                        <button type="submit" class="btn-add-event" style="width:100%; justify-content:center;">➕ Registrar Gasto</button>
+                    </form>
+
+                    <div style="background:#fff; padding:1.2rem; border-radius:8px; border:1px solid var(--border); width:340px; height:fit-content;">
+                        <h4 style="margin-bottom:0.8rem; color:var(--text-dark);">⚖ Balance & Cuentas Claras</h4>
+                        
+                        <div style="margin-bottom:0.8rem; padding:0.8rem; background:#f0fdf4; border-radius:6px;">
+                            <p id="lbl-p1" style="font-size:0.85rem; color:#166534; font-weight:bold;">Total Pagado por V1:</p>
+                            <h3 id="total-p1-usd">$0.00 USD ($0 ARS)</h3>
                         </div>
-                    </div>
 
-                    <div style="display: flex; gap: 0.5rem;">
-                        <div class="form-group" style="flex:1;">
-                            <label>Pagado por:</label>
-                            <select id="exp-payer"></select>
+                        <div style="margin-bottom:0.8rem; padding:0.8rem; background:#fef3c7; border-radius:6px;">
+                            <p id="lbl-p2" style="font-size:0.85rem; color:#92400e; font-weight:bold;">Total Pagado por V2:</p>
+                            <h3 id="total-p2-usd">$0.00 USD ($0 ARS)</h3>
                         </div>
-                        <div class="form-group" style="flex:1;">
-                            <label>¿Cómo se divide?:</label>
-                            <select id="exp-split">
-                                <option value="both">Compartido (50% / 50%)</option>
-                                <option value="p1_only">Solo Pagador 1</option>
-                                <option value="p2_only">Solo Pagador 2</option>
-                            </select>
+
+                        <div id="settlement-box" style="margin-bottom:0.8rem; padding:0.8rem; background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px;">
+                            <p style="font-size:0.8rem; color:#1e40af; font-weight:bold;">🤝 Ajuste de Deudas:</p>
+                            <p id="settlement-text" style="font-size:0.9rem; font-weight:bold; color:#1d4ed8; margin-top:4px;">Cuentas saldadas (0 ARS)</p>
                         </div>
-                    </div>
 
-                    <div class="form-group">
-                        <label>Categoría:</label>
-                        <select id="exp-category">
-                            <option value="Entradas">Entradas / Recitales / Shows</option>
-                            <option value="Transporte">Transporte / SUBE / Uber / Pasajes</option>
-                            <option value="Comida">Comida / Bodegones / Bares</option>
-                            <option value="Alojamiento">Alojamiento / Hotel</option>
-                            <option value="Compras">Compras / Manga / Ropa / Souvenirs</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="btn-add-event" style="width:100%; justify-content:center;">➕ Registrar Gasto</button>
-                </form>
-
-                <div style="background:#fff; padding:1.2rem; border-radius:8px; border:1px solid var(--border); width:340px; height:fit-content;">
-                    <h4 style="margin-bottom:0.8rem; color:var(--text-dark);">⚖ Balance & Cuentas Claras</h4>
-                    
-                    <div style="margin-bottom:0.8rem; padding:0.8rem; background:#f0fdf4; border-radius:6px;">
-                        <p id="lbl-p1" style="font-size:0.85rem; color:#166534; font-weight:bold;">Total Pagado por V1:</p>
-                        <h3 id="total-p1-usd">$0.00 USD ($0 ARS)</h3>
-                    </div>
-
-                    <div style="margin-bottom:0.8rem; padding:0.8rem; background:#fef3c7; border-radius:6px;">
-                        <p id="lbl-p2" style="font-size:0.85rem; color:#92400e; font-weight:bold;">Total Pagado por V2:</p>
-                        <h3 id="total-p2-usd">$0.00 USD ($0 ARS)</h3>
-                    </div>
-
-                    <div id="settlement-box" style="margin-bottom:0.8rem; padding:0.8rem; background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px;">
-                        <p style="font-size:0.8rem; color:#1e40af; font-weight:bold;">🤝 Ajuste de Deudas:</p>
-                        <p id="settlement-text" style="font-size:0.9rem; font-weight:bold; color:#1d4ed8; margin-top:4px;">Cuentas saldadas (0 ARS)</p>
-                    </div>
-
-                    <div style="padding:0.8rem; background:#f1f5f9; border-radius:6px;">
-                        <p style="font-size:0.85rem; color:var(--text-muted); font-weight:bold;">Total Acumulado del Viaje:</p>
-                        <h3 id="total-trip-usd">$0.00 USD</h3>
+                        <div style="padding:0.8rem; background:#f1f5f9; border-radius:6px;">
+                            <p style="font-size:0.85rem; color:var(--text-muted); font-weight:bold;">Total Acumulado del Viaje:</p>
+                            <h3 id="total-trip-usd">$0.00 USD</h3>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -480,7 +519,6 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-    // URL del Google Apps Script para "Lukitas va a la gran ciudad"
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwiuQoHFqIf80CBrgCntOzL1IYDXqzh-bdg1xJZZgNBS6l4diIDVDo_Urj8ihtDs2sN/exec";
     let ARS_USD_RATE = 1250; 
 
@@ -1196,7 +1234,7 @@
                     ✏️ Editar Evento
                 </button>
                 <button onclick="deleteEvent('${ev.title.replace(/'/g, "\\'")}', '${ev.date}')" style="background:#ef4444; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:bold;">
-                    🗑️ Eliminar Evento
+                    🗑️️ Eliminar Evento
                 </button>
             </div>
         `;
