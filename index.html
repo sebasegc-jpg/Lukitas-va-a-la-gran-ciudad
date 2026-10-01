@@ -24,12 +24,31 @@
             --accent-activity: #fef3c7;
             --accent-transport: #dcfce7;
             --accent-show: #fce7f3;
+            /* Variables personalizables para el banner de celular */
+            --banner-pos-y: center;
+            --banner-size: cover;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-        body { background-color: var(--bg-color); color: var(--text-dark); display: flex; flex-direction: column; min-height: 100vh; }
+        
+        /* MODO PC: Fondo de pantalla sutil detrás de todo */
+        body { 
+            background-color: var(--bg-color); 
+            color: var(--text-dark); 
+            display: flex; 
+            flex-direction: column; 
+            min-height: 100vh; 
+        }
 
-        /* Header compacto y limpio para ganar espacio en celular */
+        @media (min-width: 1024px) {
+            body {
+                background-image: linear-gradient(rgba(241, 245, 249, 0.92), rgba(241, 245, 249, 0.92)), url('itinerario.png');
+                background-size: cover;
+                background-attachment: fixed;
+                background-position: center;
+            }
+        }
+
         header { background-color: var(--card-bg); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .header-content { max-width: 1400px; margin: 0 auto; padding: 0.5rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;}
         .logo { font-weight: 700; font-size: 1.05rem; color: var(--primary); display: flex; align-items: center; gap: 0.4rem; }
@@ -38,7 +57,6 @@
         .ext-btn { text-decoration: none; font-size: 0.75rem; font-weight: 600; padding: 0.3rem 0.6rem; border-radius: 0.375rem; border: 1px solid var(--border); color: var(--text-dark); background: #f1f5f9; transition: all 0.2s; }
         .ext-btn:hover { background: #e2e8f0; }
 
-        /* Menú de solapas horizontal desplazable (scroll) para que no ocupe media pantalla */
         .nav-tabs { display: flex; gap: 0.4rem; background: #f1f5f9; padding: 0.2rem; border-radius: 0.5rem; overflow-x: auto; width: 100%; white-space: nowrap; scrollbar-width: none; }
         .nav-tabs::-webkit-scrollbar { display: none; }
         .tab-btn { border: none; background: transparent; padding: 0.4rem 0.8rem; border-radius: 0.375rem; font-weight: 600; font-size: 0.8rem; color: var(--text-muted); cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem; flex-shrink: 0; }
@@ -46,27 +64,55 @@
 
         main { max-width: 1400px; margin: 1rem auto; padding: 0 1rem; width: 100%; flex: 1; }
         
-        /* Sistema de pestañas con Banner Superior a Color Grande y Limpio */
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
+        /* Banner optimizado para celular con controles dinámicos */
         .tab-banner {
             width: 100%;
-            height: 260px;
-            background-size: cover;
-            background-position: center;
+            height: 220px;
+            background-size: var(--banner-size);
+            background-position: var(--banner-pos-y);
+            background-repeat: no-repeat;
             border-radius: 12px;
             margin-bottom: 1rem;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             border: 2px solid #ffffff;
+            transition: background 0.2s ease;
         }
 
-        /* Imágenes de portada dedicadas para cada pestaña */
         .banner-itinerario { background-image: url('itinerario.png'); }
         .banner-mapa { background-image: url('mapa.png'); }
         .banner-recom { background-image: url('recom.png'); }
         .banner-shows { background-image: url('shows.png'); }
         .banner-gastos { background-image: url('gastos.png'); }
+
+        /* Herramienta Admin Flotante de calibración para celular */
+        .admin-banner-tool {
+            background: #1e293b;
+            color: #fff;
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            margin-bottom: 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .admin-banner-tool button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.75rem;
+        }
+        .admin-banner-tool button:hover { background: var(--primary-hover); }
 
         .tab-inner-container {
             background-color: var(--card-bg);
@@ -169,7 +215,6 @@
                 <a href="https://docs.google.com/spreadsheets/d/1IpVyZts6sthWAEfBHqCcXdzCI3f7uwwEkFwrkRdHyVE/edit" target="_blank" class="ext-btn"><i class="fa-solid fa-table"></i> Google Sheet</a>
             </div>
         </div>
-        <!-- Menú de solapas desplazable en horizontal para ahorrar espacio vertical -->
         <nav class="nav-tabs">
             <button class="tab-btn active" onclick="switchTab('calendario', event)">
                 <i class="fa-regular fa-calendar-days"></i> Itinerario
@@ -192,6 +237,16 @@
     <main>
         <!-- ITINERARIO -->
         <section id="calendario" class="tab-content active">
+            <!-- Herramienta Admin Temporal para calibrar banners en Celular -->
+            <div class="admin-banner-tool">
+                <span>⚙️ <b>Herramienta Admin Celular:</b> Ajustar encuadre de imagen</span>
+                <div style="display:flex; gap:4px;">
+                    <button onclick="adjustBannerY('top')">⬆️ Arriba</button>
+                    <button onclick="adjustBannerY('center')">⏺ Centro</button>
+                    <button onclick="adjustBannerY('bottom')">⬇️️ Abajo</button>
+                    <button onclick="toggleBannerSize()">🔍 Ancho/Completo</button>
+                </div>
+            </div>
             <div class="tab-banner banner-itinerario"></div>
             <div class="tab-inner-container">
                 <div class="schedule-controls">
@@ -237,7 +292,7 @@
                         <button class="filter-btn" onclick="zoomMapTo('palermo')">📍 Palermo / Recoleta</button>
                         <button class="filter-btn" onclick="zoomMapTo('belgrano')">📍 Belgrano / River</button>
                         <button class="filter-btn" onclick="zoomMapTo('amba_norte')">🚆 AMBA Norte</button>
-                        <button class="filter-btn active" onclick="zoomMapTo('all')">🗺️️ Ver Todo el AMBA</button>
+                        <button class="filter-btn active" onclick="zoomMapTo('all')">🗺 Ver Todo el AMBA</button>
                     </div>
                 </div>
 
@@ -551,6 +606,16 @@
         'movistar arena': [-34.5939, -58.4475],
         'recoleta': [-34.5885, -58.3934]
     };
+
+    // Funciones de calibración interactiva para banners móviles
+    function adjustBannerY(pos) {
+        document.documentElement.style.setProperty('--banner-pos-y', pos);
+    }
+    function toggleBannerSize() {
+        const root = document.documentElement;
+        const current = getComputedStyle(root).getPropertyValue('--banner-size').trim();
+        root.style.setProperty('--banner-size', current === 'contain' ? 'cover' : 'contain');
+    }
 
     function ensureTravelerNames() {
         if (!traveler1 || !traveler2) {
@@ -1234,7 +1299,7 @@
                     ✏️ Editar Evento
                 </button>
                 <button onclick="deleteEvent('${ev.title.replace(/'/g, "\\'")}', '${ev.date}')" style="background:#ef4444; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:bold;">
-                    🗑️️ Eliminar Evento
+                    🗑 Eliminar Evento
                 </button>
             </div>
         `;
