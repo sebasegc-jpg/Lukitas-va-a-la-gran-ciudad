@@ -36,21 +36,41 @@
             min-height: 100vh; 
         }
 
-      /* MODO PC: Imágenes laterales más anchas y fijas, sin repetirse */
+  /* MODO PC: Imágenes laterales dinámicas según la pestaña activa, fijas y sin repetirse */
         @media (min-width: 1024px) {
             body {
-                background-image: url('itinerario.png'), url('itinerario.png');
-                background-size: 600px 100vh, 600px 100vh;
+                background-size: 800px 100vh, 800px 100vh;
                 background-repeat: no-repeat, no-repeat;
                 background-position: left top, right top;
                 background-attachment: fixed, fixed;
             }
+            /* Itinerario (Pestaña 1) */
+            body:has(#calendario.active) {
+                background-image: url('itinerario.png'), url('itinerario.png');
+            }
+            /* Mapa & Subte (Pestaña 2) */
+            body:has(#transporte.active) {
+                background-image: url('mapa.png'), url('mapa.png');
+            }
+            /* Recomendaciones (Pestaña 3) */
+            body:has(#reels.active) {
+                background-image: url('recom.png'), url('recom.png');
+            }
+            /* Recital & Shows (Pestaña 4) */
+            body:has(#shows.active) {
+                background-image: url('shows.png'), url('shows.png');
+            }
+            /* Gastos (Pestaña 5) */
+            body:has(#gastos.active) {
+                background-image: url('gastos.png'), url('gastos.png');
+            }
+
             .tab-banner {
                 display: none !important;
             }
             main {
                 max-width: 950px !important;
-                padding: 0 1.5rem !important;
+                padding: 0 1rem !important;
             }
         }
 
