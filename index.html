@@ -24,14 +24,11 @@
             --accent-activity: #fef3c7;
             --accent-transport: #dcfce7;
             --accent-show: #fce7f3;
-            /* Variables personalizables para el banner de celular */
-            --banner-pos-y: center;
-            --banner-size: cover;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
         
-        /* MODO PC: Fondo de pantalla sutil detrás de todo */
+        /* MODO PC: Fondo de pantalla repetido a los laterales y limpio en el centro */
         body { 
             background-color: var(--bg-color); 
             color: var(--text-dark); 
@@ -43,7 +40,8 @@
         @media (min-width: 1024px) {
             body {
                 background-image: linear-gradient(rgba(241, 245, 249, 0.92), rgba(241, 245, 249, 0.92)), url('itinerario.png');
-                background-size: cover;
+                background-size: 350px auto; /* Controla el tamaño de la textura lateral en PC */
+                background-repeat: repeat;
                 background-attachment: fixed;
                 background-position: center;
             }
@@ -67,52 +65,24 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        /* Banner optimizado para celular con controles dinámicos */
+        /* Banners específicos para Celular con archivos móviles dedicados */
         .tab-banner {
             width: 100%;
             height: 220px;
-            background-size: var(--banner-size);
-            background-position: var(--banner-pos-y);
+            background-size: cover;
+            background-position: center;
             background-repeat: no-repeat;
             border-radius: 12px;
             margin-bottom: 1rem;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             border: 2px solid #ffffff;
-            transition: background 0.2s ease;
         }
 
-        .banner-itinerario { background-image: url('itinerario.png'); }
-        .banner-mapa { background-image: url('mapa.png'); }
-        .banner-recom { background-image: url('recom.png'); }
-        .banner-shows { background-image: url('shows.png'); }
-        .banner-gastos { background-image: url('gastos.png'); }
-
-        /* Herramienta Admin Flotante de calibración para celular */
-        .admin-banner-tool {
-            background: #1e293b;
-            color: #fff;
-            padding: 0.6rem 1rem;
-            border-radius: 8px;
-            font-size: 0.75rem;
-            margin-bottom: 1rem;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .admin-banner-tool button {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 0.3rem 0.6rem;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 0.75rem;
-        }
-        .admin-banner-tool button:hover { background: var(--primary-hover); }
+        .banner-itinerario { background-image: url('itinerarioMovil.png'); }
+        .banner-mapa { background-image: url('mapaMovil.png'); }
+        .banner-recom { background-image: url('recomMovil.png'); }
+        .banner-shows { background-image: url('showsMovil.png'); }
+        .banner-gastos { background-image: url('gastosMovil.png'); }
 
         .tab-inner-container {
             background-color: var(--card-bg);
@@ -237,16 +207,6 @@
     <main>
         <!-- ITINERARIO -->
         <section id="calendario" class="tab-content active">
-            <!-- Herramienta Admin Temporal para calibrar banners en Celular -->
-            <div class="admin-banner-tool">
-                <span>⚙️ <b>Herramienta Admin Celular:</b> Ajustar encuadre de imagen</span>
-                <div style="display:flex; gap:4px;">
-                    <button onclick="adjustBannerY('top')">⬆️ Arriba</button>
-                    <button onclick="adjustBannerY('center')">⏺ Centro</button>
-                    <button onclick="adjustBannerY('bottom')">⬇️️ Abajo</button>
-                    <button onclick="toggleBannerSize()">🔍 Ancho/Completo</button>
-                </div>
-            </div>
             <div class="tab-banner banner-itinerario"></div>
             <div class="tab-inner-container">
                 <div class="schedule-controls">
@@ -606,16 +566,6 @@
         'movistar arena': [-34.5939, -58.4475],
         'recoleta': [-34.5885, -58.3934]
     };
-
-    // Funciones de calibración interactiva para banners móviles
-    function adjustBannerY(pos) {
-        document.documentElement.style.setProperty('--banner-pos-y', pos);
-    }
-    function toggleBannerSize() {
-        const root = document.documentElement;
-        const current = getComputedStyle(root).getPropertyValue('--banner-size').trim();
-        root.style.setProperty('--banner-size', current === 'contain' ? 'cover' : 'contain');
-    }
 
     function ensureTravelerNames() {
         if (!traveler1 || !traveler2) {
