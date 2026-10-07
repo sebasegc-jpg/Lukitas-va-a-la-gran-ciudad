@@ -838,6 +838,7 @@
             } 
         } 
 
+        // LECTURA AJUSTADA - Recomendaciones: A: Titulo, B: Detalles, C: aiDetails
         async function loadRecomendacionesFromSheet() { 
             const container = document.getElementById('recom-container'); 
             try { 
@@ -869,6 +870,7 @@
             } 
         } 
 
+        // LECTURA AJUSTADA - Shows: A: Titulo, B: Ubicacion, C: Detalles, D: aiDetails
         async function loadShowsFromSheet() { 
             const container = document.getElementById('shows-container'); 
             try { 
@@ -877,8 +879,11 @@
                 if (Array.isArray(data) && data.length > 0) { 
                     container.innerHTML = data.map(item => { 
                         const title = item.Titulo || item.title || 'Show / Evento'; 
+                        const ubicacion = item.Ubicacion || item.location || '';
                         const rawDetails = item.Detalles || item.details || item.aiDetails || ''; 
                         const formattedBody = formatMarkdown(rawDetails); 
+
+                        let locBadge = ubicacion ? `<span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">📍 ${ubicacion}</span>` : '';
 
                         return ` 
                             <details class="compact-item"> 
@@ -887,6 +892,7 @@
                                     <span class="summary-badge" style="background:#fce7f3; color:#be185d;">Ver guía / cartelera</span> 
                                 </summary> 
                                 <div class="compact-content"> 
+                                    ${locBadge}
                                     ${formattedBody} 
                                 </div> 
                             </details> 
@@ -1002,18 +1008,26 @@
             } 
         } 
 
+        // GUARDADO AJUSTADO A LAS COLUMNAS DEFINIDAS
         async function saveCustomRecommendationToSheet(title, text, sheetName) { 
             try { 
+                let payload = { 
+                    sheet: sheetName, 
+                    title: title, 
+                    details: text, 
+                    aiDetails: text 
+                };
+
+                // Si es Shows, incluimos 'location' para que llene la columna Ubicacion (Columna B)
+                if (sheetName === 'Shows') {
+                    payload.location = 'CABA / AMBA';
+                }
+
                 await fetch(SCRIPT_URL, { 
                     method: 'POST', 
                     mode: 'no-cors', 
                     headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ 
-                        sheet: sheetName, 
-                        title: title, 
-                        details: text, 
-                        aiDetails: text 
-                    }) 
+                    body: JSON.stringify(payload) 
                 }); 
             } catch (err) { 
                 console.warn('Error al guardar en Google Sheets:', err); 
@@ -1451,7 +1465,6 @@
             renderMapMarkers(); 
         } 
 
-        // Función de geocodificado automático usando Nominatim para búsquedas dinámicas en CABA
         async function geocodeLocation(query) {
             const cleanQuery = query.toLowerCase().trim();
             if (geocodeCache[cleanQuery]) return geocodeCache[cleanQuery];
@@ -1484,7 +1497,6 @@
             mapMarkers.forEach(m => leafletMap.removeLayer(m)); 
             mapMarkers = []; 
 
-            // 1. Renderizar Alojamiento
             for (const acc of accommodationsData) {
                 const coords = await geocodeLocation(acc.name);
                 if (coords) {
@@ -1504,9 +1516,8 @@
                 }
             }
 
-            // 2. Renderizar Eventos del Itinerario dinámicamente
             for (const ev of localEvents) {
-                if (ev.type === 'sleep') continue; // Ya cubierto en Alojamiento
+                if (ev.type === 'sleep') continue; 
                 
                 const query = ev.location || ev.title;
                 if (!query || query.startsWith('http')) continue;
