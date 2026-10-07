@@ -945,38 +945,37 @@
             
             let resultText = ""; 
 
-            // Rotación circular eficiente de API Keys (Round-Robin)
+            // Configuración del modelo activo actual
+            const targetModel = 'gemini-3.6-flash'; 
+
             for (let i = 0; i < keys.length; i++) { 
                 const activeKey = keys[(currentKeyIndex + i) % keys.length]; 
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${encodeURIComponent(activeKey)}`;
                 
-                const endpoints = [ 
-                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(activeKey)}`,
-                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(activeKey)}` 
-                ]; 
-                
-                for (let url of endpoints) { 
-                    try { 
-                        const controller = new AbortController(); 
-                        const timeoutId = setTimeout(() => controller.abort(), 12000); 
+                try { 
+                    const controller = new AbortController(); 
+                    // Timeout a 30 segundos para dar tiempo a la generación
+                    const timeoutId = setTimeout(() => controller.abort(), 30000); 
 
-                        const response = await fetch(url, { 
-                            method: 'POST', 
-                            headers: { 'Content-Type': 'application/json' }, 
-                            body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] }), 
-                            signal: controller.signal 
-                        }); 
+                    const response = await fetch(url, { 
+                        method: 'POST', 
+                        headers: { 'Content-Type': 'application/json' }, 
+                        body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] }), 
+                        signal: controller.signal 
+                    }); 
 
-                        clearTimeout(timeoutId); 
+                    clearTimeout(timeoutId); 
 
-                        const data = await response.json(); 
-                        if (response.ok && data.candidates && data.candidates[0]?.content?.parts[0]?.text) { 
-                            resultText = data.candidates[0].content.parts[0].text; 
-                            currentKeyIndex = (currentKeyIndex + i + 1) % keys.length; // Avanzar la clave para la siguiente llamada
-                            break; 
-                        } 
-                    } catch (err) { 
-                        console.warn(`Error o límite alcanzado con clave índice ${i}. Intentando siguiente.`); 
-                    } 
+                    const data = await response.json(); 
+                    if (response.ok && data.candidates && data.candidates[0]?.content?.parts[0]?.text) { 
+                        resultText = data.candidates[0].content.parts[0].text; 
+                        currentKeyIndex = (currentKeyIndex + i + 1) % keys.length; 
+                        break; 
+                    } else {
+                        console.warn(`Error en respuesta API con modelo ${targetModel} (Clave índice ${i}):`, data);
+                    }
+                } catch (err) { 
+                    console.warn(`Error de red o tiempo agotado con modelo ${targetModel} (Clave índice ${i}):`, err); 
                 } 
 
                 if (resultText) break; 
@@ -1004,7 +1003,7 @@
 
                 saveCustomRecommendationToSheet(userQuery, resultText, isShow ? "Shows" : "Recomendaciones"); 
             } else { 
-                alert("Todas las API Keys ingresadas han agotado su límite por minuto o fallaron. Aguardá 30 segundos y reintentá."); 
+                alert("No se pudo obtener respuesta de Gemini. Podés presionar F12 en tu navegador y revisar la consola para ver el motivo del error."); 
             } 
         } 
 
@@ -1018,7 +1017,6 @@
                     aiDetails: text 
                 };
 
-                // Si es Shows, incluimos 'location' para que llene la columna Ubicacion (Columna B)
                 if (sheetName === 'Shows') {
                     payload.location = 'CABA / AMBA';
                 }
