@@ -1,607 +1,1667 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lukitas va a la gran ciudad - CABA & Recitales</title>
-    <!-- Fonts & Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<!DOCTYPE html> 
+<html lang="es"> 
+<head> 
+    <meta charset="UTF-8"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>Lukitas va a la gran ciudad - CABA & Recitales</title> 
+    <!-- Fonts & Icons --> 
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"> 
     
-    <!-- Leaflet Maps CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Leaflet Maps CSS --> 
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" /> 
 
-    <style>
-        :root {
-            --bg-color: #f1f5f9;
-            --card-bg: #ffffff;
-            --primary: #2563eb;
-            --primary-hover: #1d4ed8;
-            --text-dark: #1e293b;
-            --text-muted: #64748b;
-            --border: #e2e8f0;
-            --accent-sleep: #e0f2fe;
-            --accent-activity: #fef3c7;
-            --accent-transport: #dcfce7;
-            --accent-show: #fce7f3;
-        }
+    <style> 
+        :root { 
+            --bg-color: #f1f5f9; 
+            --card-bg: #ffffff; 
+            --primary: #2563eb; 
+            --primary-hover: #1d4ed8; 
+            --text-dark: #1e293b; 
+            --text-muted: #64748b; 
+            --border: #e2e8f0; 
+            --accent-sleep: #e0f2fe; 
+            --accent-activity: #fef3c7; 
+            --accent-transport: #dcfce7; 
+            --accent-show: #fce7f3; 
+        } 
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; } 
         
-        body { 
-            background-color: var(--bg-color); 
-            color: var(--text-dark); 
-            display: flex; 
-            flex-direction: column; 
-            min-height: 100vh; 
-        }
+        body {  
+            background-color: var(--bg-color);  
+            color: var(--text-dark);  
+            display: flex;  
+            flex-direction: column;  
+            min-height: 100vh;  
+        } 
 
-        /* Escritorio: Columnas laterales con imágenes / Móvil: Banner horizontal */
-        @media (min-width: 1024px) {
-            body {
-                background-size: 730px 100vh, 730px 100vh;
-                background-repeat: no-repeat, no-repeat;
-                background-position: left top, right top;
-                background-attachment: fixed, fixed;
-            }
-            body:has(#calendario.active) { background-image: url('itinerario.png'), url('itinerario.png'); }
-            body:has(#transporte.active) { background-image: url('mapa.png'), url('mapa.png'); }
-            body:has(#reels.active) { background-image: url('recom.png'), url('recom.png'); }
-            body:has(#shows.active) { background-image: url('shows.png'), url('shows.png'); }
-            body:has(#gastos.active) { background-image: url('gastos.png'), url('gastos.png'); }
+        @media (min-width: 1024px) { 
+            body { 
+                background-size: 700px 100vh, 700px 100vh; 
+                background-repeat: no-repeat, no-repeat; 
+                background-position: left top, right top; 
+                background-attachment: fixed, fixed; 
+            } 
+            body:has(#calendario.active) { background-image: url('itinerario.png'), url('itinerario.png'); } 
+            body:has(#transporte.active) { background-image: url('mapa.png'), url('mapa.png'); } 
+            body:has(#reels.active) { background-image: url('recom.png'), url('recom.png'); } 
+            body:has(#shows.active) { background-image: url('shows.png'), url('shows.png'); } 
+            body:has(#gastos.active) { background-image: url('gastos.png'), url('gastos.png'); } 
 
-            .tab-banner { display: none !important; }
-            main { max-width: 950px !important; padding: 0 1rem !important; }
-        }
+            .tab-banner { display: none !important; } 
+            main { max-width: 950px !important; padding: 0 1rem !important; } 
+        } 
 
-        header { background-color: var(--card-bg); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        .header-content { max-width: 1400px; margin: 0 auto; padding: 0.5rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;}
-        .logo { font-weight: 700; font-size: 1.05rem; color: var(--primary); display: flex; align-items: center; gap: 0.4rem; }
+        header { background-color: var(--card-bg); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,0.02); } 
+        .header-content { max-width: 1400px; margin: 0 auto; padding: 0.5rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;} 
+        .logo { font-weight: 700; font-size: 1.05rem; color: var(--primary); display: flex; align-items: center; gap: 0.4rem; } 
         
-        .external-links { display: flex; gap: 0.5rem; }
-        .ext-btn { text-decoration: none; font-size: 0.75rem; font-weight: 600; padding: 0.3rem 0.6rem; border-radius: 0.375rem; border: 1px solid var(--border); color: var(--text-dark); background: #f1f5f9; transition: all 0.2s; cursor: pointer; }
-        .ext-btn:hover { background: #e2e8f0; }
+        .external-links { display: flex; gap: 0.5rem; } 
+        .ext-btn { text-decoration: none; font-size: 0.75rem; font-weight: 600; padding: 0.3rem 0.6rem; border-radius: 0.375rem; border: 1px solid var(--border); color: var(--text-dark); background: #f1f5f9; transition: all 0.2s; cursor: pointer; } 
+        .ext-btn:hover { background: #e2e8f0; } 
 
-        .nav-tabs { display: flex; gap: 0.4rem; background: #f1f5f9; padding: 0.2rem; border-radius: 0.5rem; overflow-x: auto; width: 100%; white-space: nowrap; scrollbar-width: none; }
-        .nav-tabs::-webkit-scrollbar { display: none; }
-        .tab-btn { border: none; background: transparent; padding: 0.4rem 0.8rem; border-radius: 0.375rem; font-weight: 600; font-size: 0.8rem; color: var(--text-muted); cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem; flex-shrink: 0; }
-        .tab-btn.active { background-color: var(--card-bg); color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .nav-tabs { display: flex; gap: 0.4rem; background: #f1f5f9; padding: 0.2rem; border-radius: 0.5rem; overflow-x: auto; width: 100%; white-space: nowrap; scrollbar-width: none; } 
+        .nav-tabs::-webkit-scrollbar { display: none; } 
+        .tab-btn { border: none; background: transparent; padding: 0.4rem 0.8rem; border-radius: 0.375rem; font-weight: 600; font-size: 0.8rem; color: var(--text-muted); cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem; flex-shrink: 0; } 
+        .tab-btn.active { background-color: var(--card-bg); color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); } 
 
-        main { max-width: 1400px; margin: 1rem auto; padding: 0 1rem; width: 100%; flex: 1; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-
-        .tab-banner { width: 100%; height: 220px; background-size: cover; background-position: center; background-repeat: no-repeat; border-radius: 12px; margin-bottom: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 2px solid #ffffff; }
-        .banner-itinerario { background-image: url('itinerarioMovil.png'); }
-        .banner-mapa { background-image: url('mapaMovil.png'); }
-        .banner-recom { background-image: url('recomMovil.png'); }
-        .banner-shows { background-image: url('showsMovil.png'); }
-        .banner-gastos { background-image: url('gastosMovil.png'); }
-
-        .tab-inner-container { background-color: var(--card-bg); border-radius: 12px; padding: 1.2rem; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-
-        .week-selector { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
-        .week-btn { background: var(--card-bg); border: 1px solid var(--border); padding: 0.4rem 0.8rem; border-radius: 0.375rem; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
-        .week-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
-
-        .schedule-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem; }
-        .btn-add-event { background: var(--primary); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 0.375rem; cursor: pointer; font-weight: 600; font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem; }
-        .btn-add-event:hover { background: var(--primary-hover); }
-
-        .schedule-grid-container { background: var(--card-bg); border: 1px solid var(--border); border-radius: 0.5rem; overflow-x: auto; max-height: 75vh; overflow-y: auto; }
-        .schedule-table { width: 100%; border-collapse: collapse; min-width: 1000px; table-layout: fixed; }
-        .schedule-table th, .schedule-table td { border: 1px solid var(--border); padding: 0; text-align: center; font-size: 0.8rem; vertical-align: top; }
-        .schedule-table tr { height: 38px; max-height: 38px; }
+        main { max-width: 1400px; margin: 1rem auto; padding: 0 1rem; width: 100%; flex: 1; } 
         
-        .schedule-table th { background: #f8fafc; position: sticky; top: 0; z-index: 10; height: 70px; padding: 0.4rem; }
-        .day-header { display: flex; flex-direction: column; justify-content: space-between; height: 100%; }
-        .day-date { font-weight: 700; color: var(--text-dark); font-size: 0.85rem; }
-        .day-stay { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px; padding: 0.2rem; font-size: 0.7rem; color: #1e40af; font-weight: 600; margin-top: 0.2rem; cursor: pointer; }
+        .tab-content { display: none; } 
+        .tab-content.active { display: block; } 
 
-        .time-col { width: 70px; font-weight: 600; background: #f1f5f9; color: var(--text-muted); text-align: center !important; height: 38px; line-height: 38px; }
+        .tab-banner { 
+            width: 100%; 
+            height: 220px; 
+            background-size: cover; 
+            background-position: center; 
+            background-repeat: no-repeat; 
+            border-radius: 12px; 
+            margin-bottom: 1rem; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
+            border: 2px solid #ffffff; 
+        } 
 
-        .event-block { border-radius: 4px; padding: 0.3rem 0.5rem; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: transform 0.1s; text-align: left; height: 100%; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-start; gap: 2px; }
-        .event-block:hover { transform: scale(1.01); }
+        .banner-itinerario { background-image: url('itinerarioMovil.png'); } 
+        .banner-mapa { background-image: url('mapaMovil.png'); } 
+        .banner-recom { background-image: url('recomMovil.png'); } 
+        .banner-shows { background-image: url('showsMovil.png'); } 
+        .banner-gastos { background-image: url('gastosMovil.png'); } 
 
-        .event-sleep { background-color: var(--accent-sleep); color: #0369a1; border-left: 3px solid #0284c7; }
-        .event-actividad { background-color: var(--accent-activity); color: #b45309; border-left: 3px solid #d97706; }
-        .event-transporte { background-color: var(--accent-transport); color: #15803d; border-left: 3px solid #16a34a; }
-        .event-show { background-color: var(--accent-show); color: #be185d; border-left: 3px solid #db2777; }
+        .tab-inner-container { 
+            background-color: var(--card-bg); 
+            border-radius: 12px; 
+            padding: 1.2rem; 
+            border: 1px solid var(--border); 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02); 
+        } 
 
-        .map-layout { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem; }
-        .map-container { flex: 2; min-width: 320px; height: 500px; border-radius: 0.5rem; overflow: hidden; border: 1px solid var(--border); position: relative; z-index: 1; }
-        #leaflet-map { width: 100%; height: 100%; }
+        .week-selector { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; } 
+        .week-btn { background: var(--card-bg); border: 1px solid var(--border); padding: 0.4rem 0.8rem; border-radius: 0.375rem; cursor: pointer; font-weight: 600; font-size: 0.85rem; } 
+        .week-btn.active { background: var(--primary); color: white; border-color: var(--primary); } 
+
+        .schedule-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem; } 
+        .btn-add-event { background: var(--primary); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 0.375rem; cursor: pointer; font-weight: 600; font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem; } 
+        .btn-add-event:hover { background: var(--primary-hover); } 
+
+        .pending-events-container { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem; display: none; } 
+        .pending-events-header { font-weight: 700; color: #c2410c; margin-bottom: 0.5rem; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; } 
+        .pending-grid { display: flex; gap: 0.75rem; overflow-x: auto; padding-bottom: 0.5rem; } 
+        .pending-card { background: #ffffff; border: 1px solid #ffedd5; border-radius: 0.375rem; padding: 0.6rem 0.8rem; min-width: 220px; flex-shrink: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.05); } 
+        .pending-title { font-weight: 600; font-size: 0.85rem; color: var(--text-dark); margin-bottom: 0.2rem; } 
+        .pending-meta { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem; } 
+        .pending-btn { background: #f97316; color: white; border: none; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; cursor: pointer; } 
+
+        .schedule-grid-container { background: var(--card-bg); border: 1px solid var(--border); border-radius: 0.5rem; overflow-x: auto; max-height: 75vh; overflow-y: auto; } 
+        .schedule-table { width: 100%; border-collapse: collapse; min-width: 1000px; table-layout: fixed; } 
+        .schedule-table th, .schedule-table td { border: 1px solid var(--border); padding: 0; text-align: center; font-size: 0.8rem; vertical-align: top; } 
+        .schedule-table tr { height: 38px; max-height: 38px; } 
         
-        .timeline-container { flex: 1; min-width: 280px; max-height: 500px; overflow-y: auto; background: #fff; border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem; }
-        .timeline-item { padding: 0.8rem; border-left: 3px solid var(--primary); background: #f8fafc; border-radius: 0 6px 6px 0; margin-bottom: 0.8rem; font-size: 0.85rem; }
-        .timeline-item h5 { font-size: 0.9rem; color: var(--text-dark); margin-bottom: 4px; }
+        .schedule-table th { background: #f8fafc; position: sticky; top: 0; z-index: 10; height: 70px; padding: 0.4rem; } 
+        .day-header { display: flex; flex-direction: column; justify-content: space-between; height: 100%; } 
+        .day-date { font-weight: 700; color: var(--text-dark); font-size: 0.85rem; } 
+        .day-stay { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px; padding: 0.2rem; font-size: 0.7rem; color: #1e40af; font-weight: 600; margin-top: 0.2rem; cursor: pointer; } 
 
-        .zone-filters { display: flex; gap: 0.4rem; margin-bottom: 1rem; flex-wrap: wrap; }
-        .filter-btn { background: #f1f5f9; border: 1px solid var(--border); padding: 0.35rem 0.85rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: var(--text-dark); }
-        .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .time-col { width: 70px; font-weight: 600; background: #f1f5f9; color: var(--text-muted); text-align: center !important; height: 38px; line-height: 38px; } 
 
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); justify-content: center; align-items: center; z-index: 200; }
-        .modal-content { background: var(--card-bg); padding: 1.5rem; border-radius: 0.5rem; width: 90%; max-width: 550px; max-height: 90vh; overflow-y: auto; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-        .close-btn { background: none; border: none; font-size: 1.25rem; cursor: pointer; color: var(--text-muted); }
-        .form-group { margin-bottom: 1rem; }
-        .form-group label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.3rem; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.375rem; font-size: 0.85rem; }
+        .event-block { border-radius: 4px; padding: 0.3rem 0.5rem; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: transform 0.1s; text-align: left; height: 100%; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-start; gap: 2px; } 
+        .event-block:hover { transform: scale(1.01); } 
+        .event-title-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 700; } 
+        .event-subtitle-line { font-size: 0.7rem; opacity: 0.85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } 
+
+        .event-sleep { background-color: var(--accent-sleep); color: #0369a1; border-left: 3px solid #0284c7; } 
+        .event-actividad { background-color: var(--accent-activity); color: #b45309; border-left: 3px solid #d97706; } 
+        .event-transporte { background-color: var(--accent-transport); color: #15803d; border-left: 3px solid #16a34a; } 
+        .event-show { background-color: var(--accent-show); color: #be185d; border-left: 3px solid #db2777; } 
+
+        .compact-accordion-list { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; } 
+        details.compact-item { background: #fff; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; transition: background 0.2s; } 
+        details.compact-item[open] { background: #ffffff; box-shadow: 0 2px 5px rgba(0,0,0,0.05); } 
+        summary.compact-summary { padding: 0.6rem 0.9rem; font-weight: 600; font-size: 0.88rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; list-style: none; background: #f8fafc; border-bottom: 1px solid transparent; } 
+        details.compact-item[open] summary.compact-summary { border-bottom-color: var(--border); background: #f1f5f9; } 
+        summary.compact-summary::-webkit-details-marker { display: none; } 
+        .summary-title { display: flex; align-items: center; gap: 0.5rem; color: var(--text-dark); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } 
+        .summary-badge { font-size: 0.72rem; padding: 2px 8px; border-radius: 12px; background: #e2e8f0; color: var(--text-muted); font-weight: 600; } 
+        .compact-content { padding: 0.9rem; font-size: 0.82rem; color: var(--text-dark); line-height: 1.5; } 
+        .compact-content p { margin-bottom: 0.5rem; } 
+        .compact-content ul { padding-left: 1.2rem; margin-bottom: 0.5rem; } 
+
+        .map-layout { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem; } 
+        .map-container { flex: 2; min-width: 320px; height: 550px; border-radius: 0.5rem; overflow: hidden; border: 1px solid var(--border); position: relative; z-index: 1; } 
+        #leaflet-map { width: 100%; height: 100%; } 
         
-        .subway-guide { background: #eff6ff; border: 1px solid #bfdbfe; padding: 0.8rem; border-radius: 8px; margin-bottom: 1rem; }
-        .subway-line { display: inline-block; padding: 2px 6px; border-radius: 4px; color: white; font-weight: bold; font-size: 0.72rem; margin-right: 4px; }
-        .line-A { background: #00a0dd; }
-        .line-B { background: #e60012; }
-        .line-D { background: #008066; }
-    </style>
-</head>
-<body>
+        .timeline-container { flex: 1; min-width: 280px; max-height: 550px; overflow-y: auto; background: #fff; border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem; } 
+        .timeline-item { padding: 0.8rem; border-left: 3px solid var(--primary); background: #f8fafc; border-radius: 0 6px 6px 0; margin-bottom: 0.8rem; font-size: 0.85rem; } 
+        .timeline-item h5 { font-size: 0.9rem; color: var(--text-dark); margin-bottom: 4px; } 
+        .timeline-date { font-size: 0.75rem; color: var(--primary); font-weight: bold; } 
 
-    <header>
-        <div class="header-content">
-             <div class="logo">
-             <i class="fa-solid fa-city"></i> Lukitas va a la gran ciudad
-            </div>
+        .zone-filters { display: flex; gap: 0.4rem; margin-bottom: 1rem; flex-wrap: wrap; } 
+        .filter-btn { background: #f1f5f9; border: 1px solid var(--border); padding: 0.35rem 0.85rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: var(--text-dark); transition: all 0.2s; } 
+        .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); } 
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); justify-content: center; align-items: center; z-index: 200; } 
+        .modal-content { background: var(--card-bg); padding: 1.5rem; border-radius: 0.5rem; width: 90%; max-width: 550px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1); } 
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; } 
+        .close-btn { background: none; border: none; font-size: 1.25rem; cursor: pointer; color: var(--text-muted); } 
+        .form-group { margin-bottom: 1rem; } 
+        .form-group label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.3rem; } 
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.375rem; font-size: 0.85rem; } 
+        
+        .subway-guide { background: #eff6ff; border: 1px solid #bfdbfe; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; } 
+        .subway-line { display: inline-block; padding: 2px 8px; border-radius: 4px; color: white; font-weight: bold; font-size: 0.75rem; margin-right: 4px; } 
+        .line-A { background: #00a0dd; } 
+        .line-B { background: #e60012; } 
+        .line-C { background: #00569f; } 
+        .line-D { background: #008066; } 
+        .line-E { background: #6f2b84; } 
+        .line-H { background: #ffd400; color: #333; } 
+    </style> 
+</head> 
+<body> 
+
+    <header> 
+        <div class="header-content"> 
+             <div class="logo"> 
+             <i class="fa-solid fa-city"></i> Lukitas va a la gran ciudad 
+            </div> 
             
-            <div class="external-links">
-                <button onclick="configApiKey()" class="ext-btn" style="background:#fef3c7; border-color:#fcd34d; color:#92400e;">
-                    <i class="fa-solid fa-key"></i> Configurar API Key
-                </button>
-            </div>
-        </div>
-        <nav class="nav-tabs">
-            <button class="tab-btn active" onclick="switchTab('calendario', event)">
-                <i class="fa-regular fa-calendar-days"></i> Itinerario
-            </button>
-            <button class="tab-btn" onclick="switchTab('transporte', event)">
-                <i class="fa-solid fa-bus"></i> Mapa & Transporte
-            </button>
-            <button class="tab-btn" onclick="switchTab('reels', event)">
-                <i class="fa-solid fa-utensils"></i> Recomendaciones
-            </button>
-            <button class="tab-btn" onclick="switchTab('shows', event)">
-                <i class="fa-solid fa-guitar"></i> Recital & Shows
-            </button>
-            <button class="tab-btn" onclick="switchTab('gastos', event)">
-                <i class="fa-solid fa-money-bill-transfer"></i> Gastos
-            </button>
-        </nav>
-    </header>
+            <div class="external-links"> 
+                <button onclick="clearCabaKeys()" class="ext-btn" style="background:#fef3c7; border-color:#fcd34d; color:#92400e;"> 
+                    <i class="fa-solid fa-key"></i> Configurar API Keys 
+                </button> 
+                <a href="https://docs.google.com/spreadsheets/d/1IpVyZts6sthWAEfBHqCcXdzCI3f7uwwEkFwrkRdHyVE/edit" target="_blank" class="ext-btn"><i class="fa-solid fa-table"></i> Google Sheet</a> 
+            </div> 
+        </div> 
+        <nav class="nav-tabs"> 
+            <button class="tab-btn active" onclick="switchTab('calendario', event)"> 
+                <i class="fa-regular fa-calendar-days"></i> Itinerario 
+            </button> 
+            <button class="tab-btn" onclick="switchTab('transporte', event)"> 
+                <i class="fa-solid fa-bus"></i> Mapa & Subte 
+            </button> 
+            <button class="tab-btn" onclick="switchTab('reels', event)"> 
+                <i class="fa-solid fa-utensils"></i> Recomendaciones 
+            </button> 
+            <button class="tab-btn" onclick="switchTab('shows', event)"> 
+                <i class="fa-solid fa-guitar"></i> El Recital & Shows 
+            </button> 
+            <button class="tab-btn" onclick="switchTab('gastos', event)"> 
+                <i class="fa-solid fa-money-bill-transfer"></i> Gastos 
+            </button> 
+        </nav> 
+    </header> 
 
-    <main>
-        <!-- ITINERARIO -->
-        <section id="calendario" class="tab-content active">
-            <div class="tab-banner banner-itinerario"></div>
-            <div class="tab-inner-container">
-                <div class="schedule-controls">
-                    <div>
-                        <h3>Distribución Horaria en CABA</h3>
-                        <div class="week-selector" id="week-selector-container" style="margin-top:0.5rem;"></div>
-                    </div>
-                    <button class="btn-add-event" onclick="openAddModal()"><i class="fa-solid fa-plus"></i> Añadir Actividad / Estadía</button>
-                </div>
+    <main> 
+        <!-- ITINERARIO --> 
+        <section id="calendario" class="tab-content active"> 
+            <div class="tab-banner banner-itinerario"></div> 
+            <div class="tab-inner-container"> 
+                <div class="schedule-controls"> 
+                    <div> 
+                        <h3>Distribución Horaria en CABA</h3> 
+                        <div class="week-selector" id="week-selector-container" style="margin-top:0.5rem;"> 
+                            <span style="font-size:0.85rem; font-weight:600;">Semana:</span> 
+                        </div> 
+                    </div> 
+                    <button class="btn-add-event" onclick="openAddModal()"><i class="fa-solid fa-plus"></i> Añadir Actividad</button> 
+                </div> 
 
-                <div class="schedule-grid-container">
-                    <table class="schedule-table">
-                        <thead>
-                            <tr id="table-header-days"></tr>
-                        </thead>
-                        <tbody id="grid-body"></tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
+                <div class="pending-events-container" id="pending-container"> 
+                    <div class="pending-events-header"> 
+                        <i class="fa-solid fa-triangle-exclamation"></i> 
+                        <span>Actividades sin hora asignada o pendientes</span> 
+                    </div> 
+                    <div class="pending-grid" id="pending-grid-list"></div> 
+                </div> 
 
-        <!-- MAPA & TRANSPORTE DINÁMICO -->
-        <section id="transporte" class="tab-content">
-            <div class="tab-banner banner-mapa"></div>
-            <div class="tab-inner-container">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom:0.8rem;">
-                    <div>
-                        <h3>Mapa Dinámico y Calculador de Rutas</h3>
-                        <p style="color: var(--text-muted); font-size:0.85rem;">Calcula la salida desde la estadía activa del día seleccionado.</p>
-                    </div>
-                    <div class="zone-filters">
-                        <button class="filter-btn" onclick="zoomMapTo('caba_centro')">📍 Centro</button>
-                        <button class="filter-btn" onclick="zoomMapTo('palermo')">📍 Palermo</button>
-                        <button class="filter-btn" onclick="zoomMapTo('belgrano')">📍 Belgrano / River</button>
-                        <button class="filter-btn active" onclick="zoomMapTo('all')">🗺 Ver Todo CABA</button>
-                    </div>
-                </div>
+                <div class="schedule-grid-container"> 
+                    <table class="schedule-table"> 
+                        <thead> 
+                            <tr id="table-header-days"></tr> 
+                        </thead> 
+                        <tbody id="grid-body"></tbody> 
+                    </table> 
+                </div> 
+            </div> 
+        </section> 
 
-                <div class="subway-guide">
-                    <h4 style="color:#1e40af; margin-bottom:0.3rem;"><i class="fa-solid fa-credit-card"></i> Pases y Pagos en CABA</h4>
-                    <p style="font-size:0.8rem; color:#334155;">
-                        Para Subtes (<span class="subway-line line-A">A</span> <span class="subway-line line-B">B</span> <span class="subway-line line-D">D</span>) y Colectivos usá tu <b>Tarjeta SUBE</b> cargada o tarjetas de débito/crédito contactless asociadas.
-                    </p>
-                </div>
+        <!-- MAPA, SUBTE Y COLECTIVOS --> 
+        <section id="transporte" class="tab-content"> 
+            <div class="tab-banner banner-mapa"></div> 
+            <div class="tab-inner-container"> 
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom:0.8rem;"> 
+                    <div> 
+                        <h3>Mapa, Subtes y Rutas en CABA / AMBA</h3> 
+                        <p style="color: var(--text-muted); font-size:0.85rem;">Movilidad rápida, líneas de colectivo recomendadas y mapa interactivo.</p> 
+                    </div> 
+                    <div class="zone-filters" style="margin-bottom:0;"> 
+                        <button class="filter-btn" onclick="zoomMapTo('caba_centro')">📍 Centro / Obelisco</button> 
+                        <button class="filter-btn" onclick="zoomMapTo('palermo')">📍 Palermo / Recoleta</button> 
+                        <button class="filter-btn" onclick="zoomMapTo('belgrano')">📍 Belgrano / River</button> 
+                        <button class="filter-btn" onclick="zoomMapTo('amba_norte')">🚆 AMBA Norte</button> 
+                        <button class="filter-btn active" onclick="zoomMapTo('all')">🗺 Ver Todo el AMBA</button> 
+                    </div> 
+                </div> 
 
-                <div class="map-layout">
-                    <div class="map-container">
-                        <div id="leaflet-map"></div>
-                    </div>
+                <div class="subway-guide"> 
+                    <h4 style="color:#1e40af; margin-bottom:0.4rem;"><i class="fa-solid fa-train-subway"></i> Guía Rápida de Red de Subtes (Llevá tu Tarjeta SUBE cargada)</h4> 
+                    <p style="font-size:0.8rem; color:#334155;"> 
+                        <span class="subway-line line-A">Línea A</span> Plaza de Mayo ⇆ San Pedrito (Congreso, Caballito) |  
+                        <span class="subway-line line-B">Línea B</span> Leandro N. Alem ⇆ J.M. de Rosas (Corrientes, Teatros, Chacarita) |  
+                        <span class="subway-line line-D">Línea D</span> Catedral ⇆ Congreso de Tucumán (Palermo, Belgrano, Estadio River Plate) 
+                    </p> 
+                    <p style="font-size:0.75rem; color:#64748b; margin-top:4px;">💡 <b>Consejo Movilidad:</b> Para trayectos nocturnos post-recital, el colectivo (Metrobús) opera 24hs. Consultá Google Maps o la app Moovit en tiempo real.</p> 
+                </div> 
+                
+                <div class="map-layout"> 
+                    <div class="map-container"> 
+                        <div id="leaflet-map"></div> 
+                    </div> 
                     
-                    <div class="timeline-container">
-                        <h4 style="margin-bottom:0.8rem; color:var(--text-dark); border-bottom:2px solid var(--border); padding-bottom:0.4rem;">
-                            🚀 Conexión Estadía ➔ Destino
-                        </h4>
-                        <div id="route-info-box">
-                            <p style="font-size:0.85rem; color:var(--text-muted);">Seleccioná un evento del itinerario para calcular el tiempo recomendado de salida desde tu hospedaje activo.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
+                    <div class="timeline-container"> 
+                        <h4 style="margin-bottom:0.8rem; color:var(--text-dark); border-bottom:2px solid var(--border); padding-bottom:0.4rem;"> 
+                            📅 Cronología de Recorrido 
+                        </h4> 
+                        <div id="timeline-list"></div> 
+                    </div> 
+                </div> 
+            </div> 
+        </section> 
 
-        <!-- RECOMENDACIONES -->
-        <section id="reels" class="tab-content">
-            <div class="tab-banner banner-recom"></div>
-            <div class="tab-inner-container">
-                <h3>Bodegones, Ropa, Anime & Parques</h3>
-                <p style="color: var(--text-muted); margin-bottom: 0.8rem;">Buscá lugares gastronómicos y spots interesantes:</p>
-                <div style="display: flex; gap: 0.5rem; margin-bottom: 0.8rem; max-width: 600px;">
-                    <input type="text" id="custom-recom-input" placeholder="Ej: Bodegón cerca de Palermo, tienda de ropa en Avellaneda..." style="flex: 1; padding: 0.6rem; border: 1px solid var(--border); border-radius: 6px;">
-                    <button onclick="alert('Función conectada a Gemini API')" style="background: var(--primary); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer;">🔍 Buscar</button>
-                </div>
-            </div>
-        </section>
+        <!-- RECOMENDACIONES --> 
+        <section id="reels" class="tab-content"> 
+            <div class="tab-banner banner-recom"></div> 
+            <div class="tab-inner-container"> 
+                <h3>Bodegones, Ropa, Anime & Parques en Buenos Aires</h3> 
+                <p style="color: var(--text-muted); margin-bottom: 0.8rem;">Buscá o guardá recomendaciones gastronómicas, compras y paseos:</p> 
 
-        <!-- SHOWS -->
-        <section id="shows" class="tab-content">
-            <div class="tab-banner banner-shows"></div>
-            <div class="tab-inner-container">
-                <h3>Guía del Recital & Eventos</h3>
-                <p style="color: var(--text-muted); margin-bottom: 0.8rem;">Accesos, horarios de apertura y transporte de regreso nocturno.</p>
-            </div>
-        </section>
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 0.8rem; max-width: 600px;"> 
+                    <input type="text" id="custom-recom-input" placeholder="Ej: Bodegones en Palermo, tiendas de manga en Abasto, ropa en Avellaneda..." style="flex: 1; padding: 0.6rem; border: 1px solid var(--border); border-radius: 6px;"> 
+                    <button onclick="searchCustomAI('recom')" style="background: var(--primary); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; font-weight: 600;">🔍 Buscar Recomendación</button> 
+                </div> 
 
-        <!-- GASTOS -->
-        <section id="gastos" class="tab-content">
-            <div class="tab-banner banner-gastos"></div>
-            <div class="tab-inner-container">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
-                    <div>
-                        <h3>Control de Gastos & Presupuesto (ARS / USD)</h3>
-                        <p style="color: var(--text-muted); font-size: 0.85rem;">Cuentas claras del viaje entre Lukitas y su acompañante.</p>
-                    </div>
-                    <button onclick="resetTravelers()" style="background:#f1f5f9; border:1px solid var(--border); padding:0.4rem 0.8rem; border-radius:6px; cursor:pointer; font-size:0.8rem; font-weight:600;">
-                        👤 Nombres de Viajeros
-                    </button>
-                </div>
+                <div class="compact-accordion-list" id="recom-container"> 
+                    <p style="color: var(--text-muted);">Cargando recomendaciones...</p> 
+                </div> 
+            </div> 
+        </section> 
 
-                <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:1rem; border-radius:8px; margin-bottom:1.5rem;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.5rem;">
-                        <h4 style="color:#166534;"><i class="fa-solid fa-calculator"></i> Conversor Rápido (ARS ⇆ USD)</h4>
-                        <span style="font-size:0.75rem; background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:12px; font-weight:bold;">1 USD = $1250 ARS</span>
-                    </div>
-                    <div style="display:flex; gap:1rem; align-items:center; flex-wrap:wrap;">
-                        <div style="flex:1; min-width:140px;">
-                            <label style="font-size:0.75rem; font-weight:bold; color:#166534;">Pesos (ARS):</label>
-                            <input type="number" id="calc-ars" placeholder="$ 50000" oninput="convertCurrency('ars')" style="width:100%; padding:0.4rem; border:1px solid #86efac; border-radius:4px;">
-                        </div>
-                        <div style="font-size:1.2rem; font-weight:bold; color:#166534; margin-top:12px;">⇆</div>
-                        <div style="flex:1; min-width:140px;">
-                            <label style="font-size:0.75rem; font-weight:bold; color:#166534;">Dólares (USD):</label>
-                            <input type="number" id="calc-usd" placeholder="$ 40" oninput="convertCurrency('usd')" style="width:100%; padding:0.4rem; border:1px solid #86efac; border-radius:4px;">
-                        </div>
-                    </div>
-                </div>
+        <!-- SHOWS & RECITAL --> 
+        <section id="shows" class="tab-content"> 
+            <div class="tab-banner banner-shows"></div> 
+            <div class="tab-inner-container"> 
+                <h3>Guía y Recomendaciones para el Recital & Eventos</h3> 
+                <p style="color: var(--text-muted); margin-bottom: 0.8rem;">Información sobre el concierto, accesos, transporte de regreso y fechas de shows:</p> 
 
-                <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
-                    <form id="expense-form" onsubmit="addExpense(event)" style="background:#fff; padding:1.2rem; border-radius:8px; border:1px solid var(--border); flex:1; min-width:300px;">
-                        <h4 style="margin-bottom:1rem; color:var(--text-dark);">➕ Registrar Gasto</h4>
-                        <div class="form-group">
-                            <label>Fecha:</label>
-                            <input type="date" id="exp-date" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Concepto:</label>
-                            <input type="text" id="exp-concept" required placeholder="Ej: Entradas Recital / Hotel / Dinner">
-                        </div>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <div class="form-group" style="flex:1;">
-                                <label>Moneda:</label>
-                                <select id="exp-currency">
-                                    <option value="ARS">Pesos ($ ARS)</option>
-                                    <option value="USD">Dólares ($ USD)</option>
-                                </select>
-                            </div>
-                            <div class="form-group" style="flex:1.5;">
-                                <label>Monto:</label>
-                                <input type="number" step="0.01" id="exp-amount" required placeholder="Ej: 15000">
-                            </div>
-                        </div>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <div class="form-group" style="flex:1;">
-                                <label>Pagado por:</label>
-                                <select id="exp-payer"></select>
-                            </div>
-                            <div class="form-group" style="flex:1;">
-                                <label>División:</label>
-                                <select id="exp-split">
-                                    <option value="both">Compartido 50/50</option>
-                                    <option value="p1_only">Solo Pagador 1</option>
-                                    <option value="p2_only">Solo Pagador 2</option>
-                                </select>
-                            </div>
-                        </div>
-                        <button type="submit" class="btn-add-event" style="width:100%; justify-content:center;">➕ Registrar Gasto</button>
-                    </form>
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 0.8rem; max-width: 600px;"> 
+                    <input type="text" id="custom-shows-input" placeholder="Ej: Consejos de llegada a Movistar Arena / River, bandas teloneras..." style="flex: 1; padding: 0.6rem; border: 1px solid var(--border); border-radius: 6px;"> 
+                    <button onclick="searchCustomAI('shows')" style="background: #be185d; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; font-weight: 600;">🎟️ Buscar Info de Show</button> 
+                </div> 
 
-                    <div style="background:#fff; padding:1.2rem; border-radius:8px; border:1px solid var(--border); width:320px; height:fit-content;">
-                        <h4 style="margin-bottom:0.8rem; color:var(--text-dark);">⚖ Balance</h4>
-                        <div style="margin-bottom:0.8rem; padding:0.8rem; background:#f0fdf4; border-radius:6px;">
-                            <p id="lbl-p1" style="font-size:0.8rem; color:#166534; font-weight:bold;">Total Pagado por V1:</p>
-                            <h3 id="total-p1">$0 ARS</h3>
-                        </div>
-                        <div style="margin-bottom:0.8rem; padding:0.8rem; background:#fef3c7; border-radius:6px;">
-                            <p id="lbl-p2" style="font-size:0.8rem; color:#92400e; font-weight:bold;">Total Pagado por V2:</p>
-                            <h3 id="total-p2">$0 ARS</h3>
-                        </div>
-                        <div style="padding:0.8rem; background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px;">
-                            <p style="font-size:0.8rem; color:#1e40af; font-weight:bold;">🤝 Estado de Deuda:</p>
-                            <p id="settlement-text" style="font-size:0.85rem; font-weight:bold; color:#1d4ed8; margin-top:4px;">Cuentas Saldadas</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
+                <div class="compact-accordion-list" id="shows-container"> 
+                    <p style="color: var(--text-muted);">Cargando eventos y guía del recital...</p> 
+                </div> 
+            </div> 
+        </section> 
 
-    <!-- Modal Agregar Evento / Estadía -->
-    <div class="modal" id="addModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Añadir Actividad o Estadía</h3>
-                <button class="close-btn" onclick="closeModal('addModal')">&times;</button>
-            </div>
-            <form id="addEventForm" onsubmit="saveEvent(event)">
-                <div class="form-group">
-                    <label>Título</label>
-                    <input type="text" id="ev-title" required placeholder="Ej: Departamento Palermo / Recital Estadio River">
-                </div>
-                <div style="display: flex; gap: 0.5rem;">
-                    <div class="form-group" style="flex:1;">
-                        <label>Fecha</label>
-                        <input type="date" id="ev-date" required>
-                    </div>
-                    <div class="form-group" style="flex:1;">
-                        <label>Hora Inicio (0-23)</label>
-                        <input type="number" id="ev-hour" min="0" max="23" required value="14">
-                    </div>
-                </div>
-                <div style="display: flex; gap: 0.5rem;">
-                    <div class="form-group" style="flex:1;">
-                        <label>Tipo</label>
-                        <select id="ev-type">
-                            <option value="sleep">🏠 Estadía / Hospedaje (Punto de Salida)</option>
-                            <option value="show">🎟️ Recital / Show</option>
-                            <option value="actividad">🍔 Actividad / Paseo / Bodegón</option>
-                        </select>
-                    </div>
-                    <div class="form-group" style="flex:1;">
-                        <label>Duración (Horas)</label>
-                        <input type="number" id="ev-duration" min="1" max="72" value="2">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Dirección o Link de Google Maps</label>
-                    <input type="text" id="ev-location" placeholder="Ej: Humboldt 1500, Palermo o URL de Google Maps">
-                </div>
-                <button type="submit" class="btn-add-event" style="width: 100%; justify-content: center;">Guardar</button>
-            </form>
-        </div>
-    </div>
+        <!-- GASTOS --> 
+        <section id="gastos" class="tab-content"> 
+            <div class="tab-banner banner-gastos"></div> 
+            <div class="tab-inner-container"> 
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;"> 
+                    <div> 
+                        <h3>Control de Gastos & Presupuesto (ARS / USD)</h3> 
+                        <p style="color: var(--text-muted); font-size: 0.85rem;">Cuentas claras del viaje entre Lukitas y su acompañante.</p> 
+                    </div> 
+                    <button onclick="resetTravelers()" style="background:#f1f5f9; border:1px solid var(--border); padding:0.4rem 0.8rem; border-radius:6px; cursor:pointer; font-size:0.8rem; font-weight:600;"> 
+                        👤 Cambiar Nombres de Viajeros 
+                    </button> 
+                </div> 
 
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+                <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:1rem; border-radius:8px; margin-bottom:1.5rem;"> 
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.5rem;"> 
+                        <h4 style="color:#166534;"><i class="fa-solid fa-calculator"></i> Conversor Rápido (Pesos ARS ⇆ Dólar USD)</h4> 
+                        <span id="rate-indicator" style="font-size:0.75rem; background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:12px; font-weight:bold;">Tasa estimada: 1 USD = $1250 ARS</span> 
+                    </div> 
+                    <div style="display:flex; gap:1rem; align-items:center; flex-wrap:wrap;"> 
+                        <div style="flex:1; min-width:140px;"> 
+                            <label style="font-size:0.75rem; font-weight:bold; color:#166534;">Pesos Argentinos (ARS):</label> 
+                            <input type="number" id="calc-ars" placeholder="$ 50000 ARS" oninput="convertCurrency('ars')" style="width:100%; padding:0.4rem; border:1px solid #86efac; border-radius:4px; font-weight:bold;"> 
+                        </div> 
+                        <div style="font-size:1.2rem; font-weight:bold; color:#166534; margin-top:12px;">⇆</div> 
+                        <div style="flex:1; min-width:140px;"> 
+                            <label style="font-size:0.75rem; font-weight:bold; color:#166534;">Dólares (USD):</label> 
+                            <input type="number" id="calc-usd" placeholder="$ 40 USD" oninput="convertCurrency('usd')" style="width:100%; padding:0.4rem; border:1px solid #86efac; border-radius:4px; font-weight:bold;"> 
+                        </div> 
+                    </div> 
+                </div> 
 
-    <script>
-        const USD_ARS_RATE = 1250;
-        let traveler1 = localStorage.getItem('caba_traveler1') || 'Lukitas';
-        let traveler2 = localStorage.getItem('caba_traveler2') || 'Acompañante';
-        let leafletMap = null;
-        let mapMarkers = [];
+                <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;"> 
+                    <form id="expense-form" onsubmit="addExpense(event)" style="background:#fff; padding:1.2rem; border-radius:8px; border:1px solid var(--border); flex:1; min-width:300px;"> 
+                        <h4 style="margin-bottom:1rem; color:var(--text-dark);">➕ Registrar Nuevo Gasto</h4> 
+                        <div class="form-group"> 
+                            <label>Fecha:</label> 
+                            <input type="date" id="exp-date" required> 
+                        </div> 
+                        <div class="form-group"> 
+                            <label>Concepto / Detalle:</label> 
+                            <input type="text" id="exp-concept" required placeholder="Ej: Entradas Recital / Hotel / Cena Bodegón / SUBE"> 
+                        </div> 
+                        
+                        <div style="display: flex; gap: 0.5rem;"> 
+                            <div class="form-group" style="flex:1;"> 
+                                <label>Moneda:</label> 
+                                <select id="exp-currency"> 
+                                    <option value="ARS">Pesos ($ ARS)</option> 
+                                    <option value="USD">Dólares ($ USD)</option> 
+                                </select> 
+                            </div> 
+                            <div class="form-group" style="flex:1.5;"> 
+                                <label>Monto Ingresado:</label> 
+                                <input type="number" step="0.01" id="exp-amount" required placeholder="Ej: 15000"> 
+                            </div> 
+                        </div> 
 
-        // Base de datos de eventos y hospedajes dinámicos
-        let localEvents = JSON.parse(localStorage.getItem('caba_events')) || [
-            { id: 1, title: 'Airbnb Palermo', date: '2026-10-10', hour: 0, duration: 24, type: 'sleep', location: 'Av. Santa Fe y Thames, Palermo' },
-            { id: 2, title: 'Recital Estadio River', date: '2026-10-10', hour: 20, duration: 3, type: 'show', location: 'Av. Figueroa Alcorta 7597, Belgrano' }
-        ];
+                        <div style="display: flex; gap: 0.5rem;"> 
+                            <div class="form-group" style="flex:1;"> 
+                                <label>Pagado por:</label> 
+                                <select id="exp-payer"></select> 
+                            </div> 
+                            <div class="form-group" style="flex:1;"> 
+                                <label>¿Cómo se divide?:</label> 
+                                <select id="exp-split"> 
+                                    <option value="both">Compartido (50% / 50%)</option> 
+                                    <option value="p1_only">Solo Pagador 1</option> 
+                                    <option value="p2_only">Solo Pagador 2</option> 
+                                </select> 
+                            </div> 
+                        </div> 
 
-        let expensesList = [];
+                        <div class="form-group"> 
+                            <label>Categoría:</label> 
+                            <select id="exp-category"> 
+                                <option value="Entradas">Entradas / Recitales / Shows</option> 
+                                <option value="Transporte">Transporte / SUBE / Uber / Pasajes</option> 
+                                <option value="Comida">Comida / Bodegones / Bares</option> 
+                                <option value="Alojamiento">Alojamiento / Hotel</option> 
+                                <option value="Compras">Compras / Manga / Ropa / Souvenirs</option> 
+                            </select> 
+                        </div> 
+                        <button type="submit" class="btn-add-event" style="width:100%; justify-content:center;">➕ Registrar Gasto</button> 
+                    </form> 
 
-        function configApiKey() {
-            let key = prompt("Ingresá tu API Key de Gemini:");
-            if (key) localStorage.setItem('CABA_GEMINI_KEY', key.trim());
-        }
+                    <div style="background:#fff; padding:1.2rem; border-radius:8px; border:1px solid var(--border); width:340px; height:fit-content;"> 
+                        <h4 style="margin-bottom:0.8rem; color:var(--text-dark);">⚖ Balance & Cuentas Claras</h4> 
+                        
+                        <div style="margin-bottom:0.8rem; padding:0.8rem; background:#f0fdf4; border-radius:6px;"> 
+                            <p id="lbl-p1" style="font-size:0.85rem; color:#166534; font-weight:bold;">Total Pagado por V1:</p> 
+                            <h3 id="total-p1-usd">$0.00 USD ($0 ARS)</h3> 
+                        </div> 
 
-        function switchTab(tabId, evt) {
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                        <div style="margin-bottom:0.8rem; padding:0.8rem; background:#fef3c7; border-radius:6px;"> 
+                            <p id="lbl-p2" style="font-size:0.85rem; color:#92400e; font-weight:bold;">Total Pagado por V2:</p> 
+                            <h3 id="total-p2-usd">$0.00 USD ($0 ARS)</h3> 
+                        </div> 
+
+                        <div id="settlement-box" style="margin-bottom:0.8rem; padding:0.8rem; background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px;"> 
+                            <p style="font-size:0.8rem; color:#1e40af; font-weight:bold;">🤝 Ajuste de Deudas:</p> 
+                            <p id="settlement-text" style="font-size:0.9rem; font-weight:bold; color:#1d4ed8; margin-top:4px;">Cuentas saldadas (0 ARS)</p> 
+                        </div> 
+
+                        <div style="padding:0.8rem; background:#f1f5f9; border-radius:6px;"> 
+                            <p style="font-size:0.85rem; color:var(--text-muted); font-weight:bold;">Total Acumulado del Viaje:</p> 
+                            <h3 id="total-trip-usd">$0.00 USD</h3> 
+                        </div> 
+                    </div> 
+                </div> 
+            </div> 
+        </section> 
+    </main> 
+
+    <!-- Modal Detalle Evento --> 
+    <div class="modal" id="eventModal"> 
+        <div class="modal-content"> 
+            <div class="modal-header"> 
+                <h3 id="modalTitle">Detalles</h3> 
+                <button class="close-btn" onclick="closeModal('eventModal')">&times;</button> 
+            </div> 
+            <div id="modalBody" style="font-size: 0.9rem; line-height: 1.5; color: var(--text-muted);"></div> 
+        </div> 
+    </div> 
+
+    <!-- Modal Agregar / Editar Evento --> 
+    <div class="modal" id="addModal"> 
+        <div class="modal-content"> 
+            <div class="modal-header"> 
+                <h3 id="modalFormHeaderTitle">Añadir Nueva Actividad</h3> 
+                <button class="close-btn" onclick="closeModal('addModal')">&times;</button> 
+            </div> 
+            <form id="addEventForm" onsubmit="saveEvent(event)"> 
+                <input type="hidden" id="ev-old-title" value=""> 
+                <input type="hidden" id="ev-old-date" value=""> 
+
+                <div class="form-group"> 
+                    <label>Título de la actividad / lugar</label> 
+                    <input type="text" id="ev-title" required placeholder="Ej: Recital / Bodegón El Cuartito / Paseo Palermo"> 
+                </div> 
+                
+                <div style="display: flex; gap: 0.5rem;"> 
+                    <div class="form-group" style="flex:1;"> 
+                        <label>Fecha Salida / Inicio</label> 
+                        <input type="date" id="ev-date" required onchange="calculateDuration()"> 
+                    </div> 
+                    <div class="form-group" style="flex:1;"> 
+                        <label>Hora Salida (0-23)</label> 
+                        <input type="number" id="ev-hour" min="0" max="23" required value="8" onchange="calculateDuration()"> 
+                    </div> 
+                </div> 
+
+                <div style="display: flex; gap: 0.5rem;" id="arrival-fields-group"> 
+                    <div class="form-group" style="flex:1;"> 
+                        <label>Fecha Llegada / Fin</label> 
+                        <input type="date" id="ev-end-date" onchange="calculateDuration()"> 
+                    </div> 
+                    <div class="form-group" style="flex:1;"> 
+                        <label>Hora Llegada (0-23)</label> 
+                        <input type="number" id="ev-end-hour" min="0" max="23" value="10" onchange="calculateDuration()"> 
+                    </div> 
+                </div> 
+
+                <div style="display: flex; gap: 0.5rem;"> 
+                    <div class="form-group" style="flex:1;"> 
+                        <label>Duración Calculada (Horas)</label> 
+                        <input type="number" id="ev-duration" min="1" max="120" required value="2"> 
+                    </div> 
+                    <div class="form-group" style="flex:1;"> 
+                        <label>Tipo de Evento</label> 
+                        <select id="ev-type" onchange="toggleLocationFields()"> 
+                            <option value="show">Show / Recital</option> 
+                            <option value="actividad">Actividad / Paseo</option> 
+                            <option value="transporte">Transporte / Colectivo / Subte</option> 
+                            <option value="sleep">Alojamiento / Descanso</option> 
+                        </select> 
+                    </div> 
+                </div> 
+
+                <div class="form-group" id="booking-code-group"> 
+                    <label>Código de Reserva / Entrada / Ticket (Opcional)</label> 
+                    <input type="text" id="ev-booking-code" placeholder="Ej: Entrada #9283 / Sector Campo"> 
+                </div> 
+
+                <div class="form-group" id="single-location-group"> 
+                    <label>Ubicación / Dirección / Link Google Maps</label> 
+                    <input type="text" id="ev-location" placeholder="Ej: Movistar Arena / https://maps.app.goo.gl/..."> 
+                </div> 
+
+                <div style="display: flex; gap: 0.5rem; flex-direction:column; display:none;" id="transport-location-group"> 
+                    <div class="form-group"> 
+                        <label>Origen (Nombre o Link de Google Maps)</label> 
+                        <input type="text" id="ev-origin-link" placeholder="Ej: Obelisco"> 
+                    </div> 
+                    <div class="form-group"> 
+                        <label>Destino (Nombre o Link de Google Maps)</label> 
+                        <input type="text" id="ev-dest-link" placeholder="Ej: Estadio River Plate"> 
+                    </div> 
+                </div> 
+
+                <div class="form-group"> 
+                    <label>Costo Estimado (ARS / USD)</label> 
+                    <input type="number" id="ev-cost" placeholder="Ej: 25000"> 
+                </div> 
+                <div class="form-group"> 
+                    <label>Detalles / Recomendaciones / Colectivos</label> 
+                    <textarea id="ev-details" rows="3" placeholder="Ej: Apertura de puertas 18:00. Tomar colectivo 42 o Subte D."></textarea> 
+                </div> 
+                <button type="submit" class="btn-add-event" style="width: 100%; justify-content: center;">Guardar Evento</button> 
+            </form> 
+        </div> 
+    </div> 
+
+    <!-- Leaflet JS --> 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script> 
+
+    <script> 
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwiuQoHFqIf80CBrgCntOzL1IYDXqzh-bdg1xJZZgNBS6l4diIDVDo_Urj8ihtDs2sN/exec"; 
+        let ARS_USD_RATE = 1250;  
+
+        let START_DATE = null; 
+        let currentWeek = 1; 
+        let totalWeeks = 2; 
+        let localEvents = []; 
+        let accommodationsData = []; 
+        
+        let traveler1 = localStorage.getItem('caba_lukitas_traveler1') || ''; 
+        let traveler2 = localStorage.getItem('caba_lukitas_traveler2') || ''; 
+
+        let currentModalEventObj = null; 
+        let currentKeyIndex = 0; 
+
+        let leafletMap = null; 
+        let mapMarkers = []; 
+        let geocodeCache = {};
+
+        const CITY_COORDS = { 
+            caba_centro: [-34.6037, -58.3816], 
+            palermo: [-34.5889, -58.4306], 
+            belgrano: [-34.5556, -58.4550], 
+            amba_norte: [-34.4714, -58.5283], 
+            all: [-34.6037, -58.4100] 
+        }; 
+
+        const KNOWN_PLACES_COORDS = { 
+            'obelisco': [-34.6037, -58.3816], 
+            'palermo': [-34.5889, -58.4306], 
+            'river': [-34.5453, -58.4497], 
+            'movistar arena': [-34.5939, -58.4475], 
+            'recoleta': [-34.5885, -58.3934] 
+        }; 
+
+        function ensureTravelerNames() { 
+            if (!traveler1 || !traveler2) { 
+                let p1 = prompt("Ingresá el Nombre del Viajero 1:", traveler1 || "Lukitas"); 
+                let p2 = prompt("Ingresá el Nombre del Viajero 2:", traveler2 || "Acompañante"); 
+                traveler1 = p1 || "Lukitas"; 
+                traveler2 = p2 || "Acompañante"; 
+                localStorage.setItem('caba_lukitas_traveler1', traveler1); 
+                localStorage.setItem('caba_lukitas_traveler2', traveler2); 
+            } 
+            updateTravelerLabels(); 
+        } 
+
+        function getApiKeys() { 
+            let raw = localStorage.getItem('CABA_GEMINI_API_KEYS') || localStorage.getItem('CABA_GEMINI_API_KEY'); 
+            if (!raw || raw.trim() === "") { 
+                raw = prompt("Ingresá tus API Keys de Gemini para CABA (hasta 3 separadas por coma):"); 
+                if (raw && raw.trim() !== "") { 
+                    raw = raw.trim(); 
+                    localStorage.setItem('CABA_GEMINI_API_KEYS', raw); 
+                } else { 
+                    return []; 
+                } 
+            } 
+            return raw.split(',').map(k => k.trim()).filter(k => k.length > 0); 
+        } 
+
+        function clearCabaKeys() { 
+            localStorage.removeItem('CABA_GEMINI_API_KEYS'); 
+            localStorage.removeItem('CABA_GEMINI_API_KEY'); 
+            alert("API Keys de CABA borradas. La próxima vez que busques una recomendación o show, te pedirá ingresarlas."); 
+        } 
+
+        function formatMarkdown(text) { 
+            if (!text) return ''; 
+            let formatted = text 
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
+                .replace(/\*(.*?)\*/g, '<em>$1</em>') 
+                .replace(/^### (.*$)/gim, '<h4 style="margin: 0.6rem 0 0.3rem 0; color: var(--primary);">$1</h4>') 
+                .replace(/^## (.*$)/gim, '<h3 style="margin: 0.8rem 0 0.4rem 0; color: var(--primary);">$1</h3>') 
+                .replace(/^\* (.*$)/gim, '<li>$1</li>') 
+                .replace(/^(1\.|2\.|3\.|4\.|5\.) (.*$)/gim, '<li>$2</li>'); 
+
+            if (formatted.includes('<li>')) { 
+                formatted = formatted.replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>'); 
+            } 
+            return formatted.replace(/\n/g, '<br>'); 
+        } 
+
+        async function fetchLiveExchangeRate() { 
+            try { 
+                const res = await fetch('https://dolarapi.com/v1/dolares/blue'); 
+                const data = await res.json(); 
+                if (data && data.venta) { 
+                    ARS_USD_RATE = parseFloat(data.venta); 
+                    const ind = document.getElementById('rate-indicator'); 
+                    if (ind) ind.innerText = `Dólar Blue en Vivo: 1 USD = $${ARS_USD_RATE.toFixed(2)} ARS`; 
+                } 
+            } catch(e) { 
+                console.warn("Usando tasa de cambio base ARS/USD."); 
+            } 
+        } 
+
+        function convertCurrency(source) { 
+            const arsInput = document.getElementById('calc-ars'); 
+            const usdInput = document.getElementById('calc-usd'); 
+            if (!arsInput || !usdInput) return; 
+
+            if (source === 'ars') { 
+                const val = parseFloat(arsInput.value); 
+                usdInput.value = isNaN(val) ? '' : (val / ARS_USD_RATE).toFixed(2); 
+            } else { 
+                const val = parseFloat(usdInput.value); 
+                arsInput.value = isNaN(val) ? '' : Math.round(val * ARS_USD_RATE); 
+            } 
+        } 
+
+        function calculateDuration() { 
+            const startDateVal = document.getElementById('ev-date').value; 
+            const startHourVal = parseInt(document.getElementById('ev-hour').value) || 0; 
+            const endDateVal = document.getElementById('ev-end-date').value; 
+            const endHourVal = parseInt(document.getElementById('ev-end-hour').value) || 0; 
+
+            if (startDateVal && endDateVal) { 
+                const start = new Date(`${startDateVal}T${startHourVal.toString().padStart(2, '0')}:00:00`); 
+                const end = new Date(`${endDateVal}T${endHourVal.toString().padStart(2, '0')}:00:00`); 
+
+                const diffMs = end - start; 
+                if (diffMs > 0) { 
+                    const diffHours = Math.round(diffMs / (1000 * 60 * 60)); 
+                    document.getElementById('ev-duration').value = diffHours; 
+                } 
+            } 
+        } 
+
+        function switchTab(tabId, evt) { 
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active')); 
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active')); 
             
-            document.getElementById(tabId).classList.add('active');
-            if (evt) evt.currentTarget.classList.add('active');
+            const target = document.getElementById(tabId); 
+            if (target) target.classList.add('active'); 
+            if (evt && evt.currentTarget) { 
+                evt.currentTarget.classList.add('active'); 
+            } 
 
-            if (tabId === 'transporte') {
-                setTimeout(() => {
-                    if (!leafletMap) initLeafletMap();
-                    else leafletMap.invalidateSize();
-                    renderMapData();
-                }, 200);
+            if (tabId === 'gastos') { 
+                ensureTravelerNames(); 
+                loadExpensesFromSheet(); 
+            } 
+            if (tabId === 'reels') loadRecomendacionesFromSheet(); 
+            if (tabId === 'shows') loadShowsFromSheet(); 
+            if (tabId === 'transporte') { 
+                setTimeout(() => { 
+                    if (leafletMap) leafletMap.invalidateSize(); 
+                    else initLeafletMap(); 
+                    renderTimeline(); 
+                    renderMapMarkers(); 
+                }, 200); 
+            } 
+        } 
+
+        function setWeek(weekNum) { 
+            currentWeek = weekNum; 
+            document.querySelectorAll('.week-btn').forEach((btn, idx) => { 
+                btn.classList.toggle('active', idx === weekNum - 1); 
+            }); 
+            renderHeaderDays(); 
+            buildGrid(localEvents); 
+        } 
+
+        function parseDateStr(rawDate) { 
+            if (!rawDate) return null; 
+            let clean = String(rawDate).split('T')[0].split(' ')[0].replace(/^"|"$/g, '').trim(); 
+            if (clean.includes('/')) { 
+                let parts = clean.split('/'); 
+                if (parts.length === 3) return new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10)); 
+            } else if (clean.includes('-')) { 
+                let parts = clean.split('-'); 
+                if (parts.length === 3) return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10)); 
+            } 
+            return null; 
+        } 
+
+        function formatDateToISO(d) { 
+            if (!d) return ''; 
+            let year = d.getFullYear(); 
+            let month = (d.getMonth() + 1).toString().padStart(2, '0'); 
+            let day = d.getDate().toString().padStart(2, '0'); 
+            return `${year}-${month}-${day}`; 
+        } 
+
+        function autoDetectTripBounds() { 
+            let allDates = []; 
+            localEvents.forEach(e => { let d = parseDateStr(e.date); if (d) allDates.push(d); }); 
+            accommodationsData.forEach(a => {  
+                let d1 = parseDateStr(a.start); if (d1) allDates.push(d1); 
+                let d2 = parseDateStr(a.end); if (d2) allDates.push(d2); 
+            }); 
+
+            if (allDates.length > 0) { 
+                allDates.sort((a, b) => a - b); 
+                let earliest = new Date(allDates[0]); 
+                let latest = new Date(allDates[allDates.length - 1]); 
+
+                let dayIdx = (earliest.getDay() + 6) % 7; 
+                earliest.setDate(earliest.getDate() - dayIdx); 
+                START_DATE = earliest; 
+
+                let diffDays = Math.ceil((latest - earliest) / (1000 * 60 * 60 * 24)) + 1; 
+                totalWeeks = Math.max(1, Math.ceil(diffDays / 7)); 
+            } else { 
+                let today = new Date(); 
+                let dayIdx = (today.getDay() + 6) % 7; 
+                today.setDate(today.getDate() - dayIdx); 
+                START_DATE = today; 
+                totalWeeks = 2; 
+            } 
+
+            renderWeekButtons(); 
+        } 
+
+        function renderWeekButtons() { 
+            const container = document.getElementById('week-selector-container'); 
+            if (!container) return; 
+
+            let html = `<span style="font-size:0.85rem; font-weight:600;">Semana:</span>`; 
+            for (let w = 1; w <= totalWeeks; w++) { 
+                let wStart = new Date(START_DATE); 
+                wStart.setDate(wStart.getDate() + (w - 1) * 7); 
+                let wEnd = new Date(wStart); 
+                wEnd.setDate(wEnd.getDate() + 6); 
+
+                let labelStart = `${wStart.getDate().toString().padStart(2,'0')}/${(wStart.getMonth()+1).toString().padStart(2,'0')}`; 
+                let labelEnd = `${wEnd.getDate().toString().padStart(2,'0')}/${(wEnd.getMonth()+1).toString().padStart(2,'0')}`; 
+
+                let activeClass = (w === currentWeek) ? 'active' : ''; 
+                html += `<button class="week-btn ${activeClass}" onclick="setWeek(${w})">Semana ${w} (${labelStart} - ${labelEnd})</button>`; 
+            } 
+            container.innerHTML = html; 
+        } 
+
+        function getDatesForCurrentWeek() { 
+            if (!START_DATE) autoDetectTripBounds(); 
+            let dates = []; 
+            let startOffset = (currentWeek - 1) * 7; 
+            for (let i = 0; i < 7; i++) { 
+                let d = new Date(START_DATE); 
+                d.setDate(d.getDate() + startOffset + i); 
+                dates.push(d); 
+            } 
+            return dates; 
+        } 
+
+        async function loadAccommodationsFromSheet() { 
+            try { 
+                const res = await fetch(`${SCRIPT_URL}?sheet=Alojamiento`); 
+                const data = await res.json(); 
+                if (Array.isArray(data)) { 
+                    accommodationsData = data.map(r => { 
+                        const name = r.Nombre || r.name || ''; 
+                        const start = r.CheckIn || r.start || ''; 
+                        const end = r.CheckOut || r.end || ''; 
+                        const mapUrl = r.Direccion || r.mapUrl || ''; 
+                        return { name, start, end, mapUrl }; 
+                    }).filter(a => a.name !== ''); 
+                } 
+            } catch (e) { 
+                console.error("Error al cargar alojamientos:", e); 
+            } 
+        } 
+
+        async function loadEventsFromSheet() { 
+            try { 
+                const res = await fetch(`${SCRIPT_URL}?sheet=Itinerario`); 
+                const data = await res.json(); 
+                
+                if (Array.isArray(data)) { 
+                    localEvents = data.map(row => { 
+                        const title = row.Titulo || row.title || ''; 
+                        const date = row.Dia || row.date || ''; 
+                        const rawStart = row.HoraInicio !== undefined ? row.HoraInicio : row.startHour; 
+                        const startHour = (rawStart !== "" && rawStart !== null && rawStart !== undefined && !isNaN(parseInt(rawStart))) ? parseInt(rawStart) : null; 
+                        const durationHours = parseInt(row.DuracionHoras || row.durationHours) || 1; 
+                        const type = row.Tipo || row.type || 'actividad'; 
+                        const location = row.Ubicacion || row.location || ''; 
+                        const cost = row.Costo || row.cost || ''; 
+                        const details = row.Detalles || row.details || ''; 
+                        const aiDetails = row.aiDetails || ''; 
+                        const bookingCode = row.CodigoReserva || row.bookingCode || ''; 
+                        const originLink = row.OrigenLink || row.originLink || ''; 
+                        const destLink = row.DestinoLink || row.destLink || ''; 
+                        const endDate = row.FechaLlegada || row.endDate || date; 
+                        const endHour = row.HoraLlegada !== undefined && row.HoraLlegada !== "" ? parseInt(row.HoraLlegada) : (startHour !== null ? startHour : 0); 
+
+                        return { title, date, startHour, durationHours, type, location, cost, details, aiDetails, bookingCode, originLink, destLink, endDate, endHour }; 
+                    }).filter(e => e.title !== ''); 
+                } 
+            } catch (error) { 
+                console.error('Error al cargar eventos:', error); 
+            } 
+        } 
+
+        async function loadRecomendacionesFromSheet() { 
+            const container = document.getElementById('recom-container'); 
+            try { 
+                const res = await fetch(`${SCRIPT_URL}?sheet=Recomendaciones`); 
+                const data = await res.json(); 
+                if (Array.isArray(data) && data.length > 0) { 
+                    container.innerHTML = data.map(item => { 
+                        const title = item.Titulo || item.title || 'Recomendación'; 
+                        const rawDetails = item.Detalles || item.details || item.aiDetails || ''; 
+                        const formattedBody = formatMarkdown(rawDetails); 
+                        
+                        return ` 
+                            <details class="compact-item"> 
+                                <summary class="compact-summary"> 
+                                    <span class="summary-title">📍 ${title}</span> 
+                                    <span class="summary-badge">Ver recomendación</span> 
+                                </summary> 
+                                <div class="compact-content"> 
+                                    ${formattedBody} 
+                                </div> 
+                            </details> 
+                        `; 
+                    }).join(''); 
+                } else { 
+                    container.innerHTML = `<p style="color:var(--text-muted);">No hay recomendaciones guardadas en Sheets aún.</p>`; 
+                } 
+            } catch(e) { 
+                container.innerHTML = `<p style="color:var(--text-muted);">Error al cargar recomendaciones.</p>`; 
+            } 
+        } 
+
+        async function loadShowsFromSheet() { 
+            const container = document.getElementById('shows-container'); 
+            try { 
+                const res = await fetch(`${SCRIPT_URL}?sheet=Shows`); 
+                const data = await res.json(); 
+                if (Array.isArray(data) && data.length > 0) { 
+                    container.innerHTML = data.map(item => { 
+                        const title = item.Titulo || item.title || 'Show / Evento'; 
+                        const rawDetails = item.Detalles || item.details || item.aiDetails || ''; 
+                        const formattedBody = formatMarkdown(rawDetails); 
+
+                        return ` 
+                            <details class="compact-item"> 
+                                <summary class="compact-summary"> 
+                                    <span class="summary-title">🎟️ ${title}</span> 
+                                    <span class="summary-badge" style="background:#fce7f3; color:#be185d;">Ver guía / cartelera</span> 
+                                </summary> 
+                                <div class="compact-content"> 
+                                    ${formattedBody} 
+                                </div> 
+                            </details> 
+                        `; 
+                    }).join(''); 
+                } else { 
+                    container.innerHTML = `<p style="color:var(--text-muted);">No hay shows o guías de recitales guardadas en Sheets aún.</p>`; 
+                } 
+            } catch(e) { 
+                container.innerHTML = `<p style="color:var(--text-muted);">Error al cargar shows.</p>`; 
+            } 
+        } 
+
+        async function searchCustomAI(type) { 
+            const isShow = type === 'shows'; 
+            const inputId = isShow ? 'custom-shows-input' : 'custom-recom-input'; 
+            const containerId = isShow ? 'shows-container' : 'recom-container'; 
+            const inputEl = document.getElementById(inputId); 
+            
+            if (!inputEl) return; 
+            const userQuery = inputEl.value.trim(); 
+
+            if (!userQuery) { 
+                alert("Escribí lo que querés consultar (ej: bodegones en Palermo, recitales, tiendas anime en CABA...)."); 
+                return; 
+            } 
+
+            const container = document.getElementById(containerId); 
+            
+            const loadingCard = document.createElement('div'); 
+            loadingCard.id = 'temp-loading-card'; 
+            loadingCard.style.cssText = "padding:1rem; background:#fff; border:1px solid var(--border); border-radius:6px; margin-bottom:1rem; color:var(--text-muted); font-style:italic;"; 
+            loadingCard.innerHTML = `🔎 Consultando a Gemini sobre "${userQuery}"... Por favor aguardá unos segundos.`; 
+            container.prepend(loadingCard); 
+
+            const keys = getApiKeys(); 
+            if (!keys || keys.length === 0) { 
+                document.getElementById('temp-loading-card')?.remove(); 
+                alert("No hay API Keys guardadas en el navegador para CABA."); 
+                return; 
+            } 
+
+            const promptText = `Eres un guía experto en Buenos Aires (CABA / AMBA), recitales, transporte, bodegones, ferias de ropa, anime y eventos.  
+            El usuario está consultando sobre: "${userQuery}". 
+            
+            Instrucciones: 
+            1. Si la consulta es sobre un trayecto o cómo llegar de un lugar a otro, detalla explícitamente qué líneas de colectivo, subtes (Líneas A, B, C, D, E, H) o Metrobús debe tomar, cuántas cuadras caminar y consejos de seguridad. 
+            2. Si es una recomendación general (bodegones, compras, paseos), brinda datos concretos, ubicaciones y platos/productos recomendados. 
+            3. Responde en español con formato Markdown claro y estructurado.`; 
+            
+            let resultText = ""; 
+
+            // Rotación circular eficiente de API Keys (Round-Robin)
+            for (let i = 0; i < keys.length; i++) { 
+                const activeKey = keys[(currentKeyIndex + i) % keys.length]; 
+                
+                const endpoints = [ 
+                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(activeKey)}`,
+                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(activeKey)}` 
+                ]; 
+                
+                for (let url of endpoints) { 
+                    try { 
+                        const controller = new AbortController(); 
+                        const timeoutId = setTimeout(() => controller.abort(), 12000); 
+
+                        const response = await fetch(url, { 
+                            method: 'POST', 
+                            headers: { 'Content-Type': 'application/json' }, 
+                            body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] }), 
+                            signal: controller.signal 
+                        }); 
+
+                        clearTimeout(timeoutId); 
+
+                        const data = await response.json(); 
+                        if (response.ok && data.candidates && data.candidates[0]?.content?.parts[0]?.text) { 
+                            resultText = data.candidates[0].content.parts[0].text; 
+                            currentKeyIndex = (currentKeyIndex + i + 1) % keys.length; // Avanzar la clave para la siguiente llamada
+                            break; 
+                        } 
+                    } catch (err) { 
+                        console.warn(`Error o límite alcanzado con clave índice ${i}. Intentando siguiente.`); 
+                    } 
+                } 
+
+                if (resultText) break; 
+            } 
+
+            document.getElementById('temp-loading-card')?.remove(); 
+
+            if (resultText) { 
+                const formattedBody = formatMarkdown(resultText); 
+                
+                const newAccordion = ` 
+                    <details class="compact-item" open style="border: 2px solid var(--primary); margin-bottom:0.8rem;"> 
+                        <summary class="compact-summary" style="background: #eff6ff;"> 
+                            <span class="summary-title">✨ 🎯 Consulta CABA: ${userQuery}</span> 
+                            <span class="summary-badge" style="background:var(--primary); color:white;">Respuesta IA en vivo</span> 
+                        </summary> 
+                        <div class="compact-content"> 
+                            ${formattedBody} 
+                        </div> 
+                    </details> 
+                `; 
+
+                container.innerHTML = newAccordion + container.innerHTML; 
+                inputEl.value = ''; 
+
+                saveCustomRecommendationToSheet(userQuery, resultText, isShow ? "Shows" : "Recomendaciones"); 
+            } else { 
+                alert("Todas las API Keys ingresadas han agotado su límite por minuto o fallaron. Aguardá 30 segundos y reintentá."); 
+            } 
+        } 
+
+        async function saveCustomRecommendationToSheet(title, text, sheetName) { 
+            try { 
+                await fetch(SCRIPT_URL, { 
+                    method: 'POST', 
+                    mode: 'no-cors', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ 
+                        sheet: sheetName, 
+                        title: title, 
+                        details: text, 
+                        aiDetails: text 
+                    }) 
+                }); 
+            } catch (err) { 
+                console.warn('Error al guardar en Google Sheets:', err); 
+            } 
+        } 
+
+        function renderHeaderDays() { 
+            const headerRow = document.getElementById('table-header-days'); 
+            if (!headerRow) return; 
+            const dates = getDatesForCurrentWeek(); 
+            const dayNamesLunesADomingo = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']; 
+
+            let html = `<th class="time-col">Hora</th>`; 
+            dates.forEach(d => { 
+                let dayIdx = (d.getDay() + 6) % 7; 
+                let formattedDate = `${dayNamesLunesADomingo[dayIdx]} ${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`; 
+                
+                let acc = accommodationsData.find(a => { 
+                    let startObj = parseDateStr(a.start); 
+                    let endObj = parseDateStr(a.end); 
+                    if (!startObj || !endObj) return false; 
+                    
+                    let target = new Date(d.getFullYear(), d.getMonth(), d.getDate()); 
+                    let s = new Date(startObj.getFullYear(), startObj.getMonth(), startObj.getDate()); 
+                    let e = new Date(endObj.getFullYear(), endObj.getMonth(), endObj.getDate()); 
+                    return target >= s && target <= e; 
+                }); 
+                
+                let stayHTML = '<div class="day-stay">Sin asignar</div>'; 
+                if (acc) { 
+                    const safeName = acc.name.replace(/'/g, "\\'"); 
+                    stayHTML = `<div class="day-stay" onclick="showModalByTitle('${safeName}')">🏨 ${acc.name}</div>`; 
+                } 
+
+                html += `<th><div class="day-header"><div class="day-date">${formattedDate}</div>${stayHTML}</div></th>`; 
+            }); 
+            headerRow.innerHTML = html; 
+        } 
+
+        function renderPendingEvents(pendingEvents) { 
+            const container = document.getElementById('pending-container'); 
+            const list = document.getElementById('pending-grid-list'); 
+            if (!container || !list) return; 
+
+            if (pendingEvents.length === 0) { 
+                container.style.display = 'none'; 
+                list.innerHTML = ''; 
+                return; 
+            } 
+
+            container.style.display = 'block'; 
+            list.innerHTML = pendingEvents.map(ev => { 
+                const safeTitle = ev.title.replace(/'/g, "\\'"); 
+                return ` 
+                    <div class="pending-card"> 
+                        <div class="pending-title">📍 ${ev.title}</div> 
+                        <div class="pending-meta">Fecha: ${ev.date || 'Sin fecha'} | Hora: Pendiente</div> 
+                        <button class="pending-btn" onclick="editPendingEvent('${safeTitle}', '${ev.date}')"> 
+                            ✏️ Asignar Hora / Editar 
+                        </button> 
+                    </div> 
+                `; 
+            }).join(''); 
+        } 
+
+        function editPendingEvent(title, date) { 
+            const ev = localEvents.find(e => e.title === title && e.date === date); 
+            if (!ev) return; 
+            currentModalEventObj = ev; 
+            editEventModal(); 
+        } 
+
+        function buildGrid(events = []) { 
+            const tbody = document.getElementById('grid-body'); 
+            if (!tbody) return; 
+            tbody.innerHTML = ''; 
+
+            const validEvents = events.filter(e => e.startHour !== null && e.startHour >= 0 && e.startHour <= 23); 
+            const pendingEvents = events.filter(e => e.startHour === null || e.startHour < 0 || e.startHour > 23); 
+            
+            renderPendingEvents(pendingEvents); 
+
+            const dates = getDatesForCurrentWeek(); 
+            let occupiedCells = Array.from({ length: 24 }, () => Array(7).fill(false)); 
+
+            dates.forEach((d, dayIdx) => { 
+                let currentDateISO = formatDateToISO(d); 
+
+                validEvents.forEach(e => { 
+                    let evStartDate = parseDateStr(e.date); 
+                    if (!evStartDate) return; 
+
+                    let evStartISO = formatDateToISO(evStartDate); 
+                    let rawDuration = parseInt(e.durationHours) || 1; 
+
+                    if (evStartISO === currentDateISO) { 
+                        let startH = e.startHour; 
+                        let endH = Math.min(24, startH + rawDuration); 
+                        for (let h = startH; h < endH; h++) { 
+                            occupiedCells[h][dayIdx] = true; 
+                        } 
+                    } else { 
+                        let diffDays = Math.round((d - evStartDate) / (1000 * 60 * 60 * 24)); 
+                        if (diffDays > 0) { 
+                            let hoursPassedBeforeToday = (diffDays * 24) - e.startHour; 
+                            let remainingHoursToday = rawDuration - hoursPassedBeforeToday; 
+
+                            if (remainingHoursToday > 0) { 
+                                let endH = Math.min(24, remainingHoursToday); 
+                                for (let h = 0; h < endH; h++) { 
+                                    occupiedCells[h][dayIdx] = true; 
+                                } 
+                            } 
+                        } 
+                    } 
+                }); 
+            }); 
+
+            for (let hour = 0; hour < 24; hour++) { 
+                const tr = document.createElement('tr'); 
+                let rowHTML = `<td class="time-col">${hour.toString().padStart(2, '0')}:00</td>`; 
+
+                for (let dayIdx = 0; dayIdx < 7; dayIdx++) { 
+                    let d = dates[dayIdx]; 
+                    let currentDateISO = formatDateToISO(d); 
+
+                    const evStart = validEvents.find(e => { 
+                        let evDateObj = parseDateStr(e.date); 
+                        return evDateObj && formatDateToISO(evDateObj) === currentDateISO && e.startHour === hour; 
+                    }); 
+
+                    let evContinuation = null; 
+                    if (!evStart && hour === 0) { 
+                        evContinuation = validEvents.find(e => { 
+                            let evStartDate = parseDateStr(e.date); 
+                            if (!evStartDate) return false; 
+                            let diffDays = Math.round((d - evStartDate) / (1000 * 60 * 60 * 24)); 
+                            if (diffDays <= 0) return false; 
+
+                            let hoursPassedBeforeToday = (diffDays * 24) - e.startHour; 
+                            let remainingHoursToday = (parseInt(e.durationHours) || 1) - hoursPassedBeforeToday; 
+                            return remainingHoursToday > 0; 
+                        }); 
+                    } 
+
+                    if (evStart) { 
+                        const rawDuration = parseInt(evStart.durationHours) || 1; 
+                        let visualSpan = Math.min(rawDuration, 24 - hour); 
+
+                        let locText = evStart.type === 'transporte' ? `${evStart.originLink || ''} ➔ ${evStart.destLink || ''}` : (evStart.location || ''); 
+                        if (evStart.type === 'transporte' && (!evStart.originLink && !evStart.destLink)) locText = evStart.location || ''; 
+
+                        let safeTitle = evStart.title.replace(/'/g, "\\'"); 
+                        let icon = evStart.type === 'transporte' ? '🚌' : (evStart.type === 'show' ? '🎸' : (evStart.type === 'sleep' ? '🏨' : '📍')); 
+
+                        rowHTML += `<td rowspan="${visualSpan}" style="padding:1px; vertical-align:top; height:${visualSpan * 38}px;"> 
+                            <div class="event-block event-${evStart.type || 'actividad'}" onclick="showModalByObject('${safeTitle}', '${evStart.date}', ${evStart.startHour})"> 
+                                <div class="event-title-line">${icon} ${evStart.title}</div> 
+                                <div class="event-subtitle-line">${rawDuration}h totales ${locText ? '| ' + locText : ''}</div> 
+                            </div> 
+                        </td>`; 
+                    } else if (evContinuation) { 
+                        let evStartDate = parseDateStr(evContinuation.date); 
+                        let diffDays = Math.round((d - evStartDate) / (1000 * 60 * 60 * 24)); 
+                        let hoursPassedBeforeToday = (diffDays * 24) - evContinuation.startHour; 
+                        let remainingHoursToday = (parseInt(evContinuation.durationHours) || 1) - hoursPassedBeforeToday; 
+                        
+                        let visualSpan = Math.min(remainingHoursToday, 24); 
+
+                        let safeTitle = evContinuation.title.replace(/'/g, "\\'"); 
+                        let icon = evContinuation.type === 'transporte' ? '🚌' : (evContinuation.type === 'show' ? '🎸' : (evContinuation.type === 'sleep' ? '🏨' : '📍')); 
+
+                        rowHTML += `<td rowspan="${visualSpan}" style="padding:1px; vertical-align:top; height:${visualSpan * 38}px;"> 
+                            <div class="event-block event-${evContinuation.type || 'actividad'}" onclick="showModalByObject('${safeTitle}', '${evContinuation.date}', ${evContinuation.startHour})"> 
+                                <div class="event-title-line">${icon} ${evContinuation.title} (Cont.)</div> 
+                                <div class="event-subtitle-line">Llegada / Fin: ${visualSpan}:00hs</div> 
+                            </div> 
+                        </td>`; 
+                    } else { 
+                        if (!occupiedCells[hour][dayIdx]) { 
+                            rowHTML += `<td></td>`; 
+                        } 
+                    } 
+                } 
+                tr.innerHTML = rowHTML; 
+                tbody.appendChild(tr); 
+            } 
+        } 
+
+        function showModalByTitle(title) { 
+            let acc = accommodationsData.find(a => a.name === title); 
+            if (acc) { 
+                document.getElementById('modalTitle').innerText = acc.name; 
+                document.getElementById('modalBody').innerHTML = ` 
+                    <p><b>Ubicación:</b> ${acc.name}</p> 
+                    <p><b>Estadía:</b> ${acc.start} hasta ${acc.end}</p> 
+                    <div style="margin-top:1rem;"> 
+                        <a href="${acc.mapUrl || 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(acc.name)}" target="_blank" style="color:var(--primary); font-weight:bold; text-decoration:underline;"> 
+                            🗺️ Abrir ubicación en Google Maps 
+                        </a> 
+                    </div> 
+                `; 
+                document.getElementById('eventModal').style.display = 'flex'; 
+            } 
+        } 
+
+        function showModalByObject(title, date, startHour) { 
+            const ev = localEvents.find(e => e.title === title && e.date === date && e.startHour === startHour); 
+            if (!ev) return; 
+
+            currentModalEventObj = ev; 
+            document.getElementById('modalTitle').innerText = ev.title; 
+
+            let bookingHTML = ev.bookingCode ? `<p style="background:#fef3c7; color:#92400e; padding:4px 8px; border-radius:4px; font-weight:bold; font-size:0.85rem; margin-bottom:8px;">🎟 Entrada/Ticket: ${ev.bookingCode}</p>` : ''; 
+
+            let routeHTML = ''; 
+            if (ev.type === 'transporte') { 
+                let orig = ev.originLink || 'Origen no especificado'; 
+                let dest = ev.destLink || 'Destino no especificado'; 
+                
+                let origLink = orig.startsWith('http') ? `<a href="${orig}" target="_blank" style="color:#1d4ed8; text-decoration:underline;">📍 Abrir Origen en Maps</a>` : orig; 
+                let destLink = dest.startsWith('http') ? `<a href="${dest}" target="_blank" style="color:#1d4ed8; text-decoration:underline;">📍 Abrir Destino en Maps</a>` : dest; 
+
+                routeHTML = ` 
+                    <div style="margin: 0.8rem 0; padding: 0.8rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; font-size: 0.85rem;"> 
+                        <p style="font-weight:bold; color:#1e40af; margin-bottom:4px;">🚉 Trayecto / Colectivo / Subte:</p> 
+                        <p><b>Origen:</b> ${origLink}</p> 
+                        <p><b>Destino:</b> ${destLink}</p> 
+                    </div>`; 
+            } else { 
+                let loc = ev.location || ev.title; 
+                let locLink = loc.startsWith('http') ? `<a href="${loc}" target="_blank" style="color:#1d4ed8; text-decoration:underline;">📍 Abrir en Google Maps</a>` : loc; 
+                routeHTML = `<p><b>Ubicación:</b> ${locLink}</p>`; 
+            } 
+
+            let arrivalInfo = (ev.endDate) ? `<p><b>Llegada / Fin:</b> ${ev.endDate} ${ev.endHour || 0}:00hs</p>` : ''; 
+
+            document.getElementById('modalBody').innerHTML = ` 
+                ${bookingHTML} 
+                <p><b>Salida / Inicio:</b> ${ev.date} ${ev.startHour !== null ? ev.startHour : 'Pendiente'}:00hs</p> 
+                ${arrivalInfo} 
+                <p><b>Duración:</b> ${ev.durationHours} horas</p> 
+                <p><b>Costo estimado:</b> ${ev.cost ? '$' + ev.cost + ' ARS' : 'Gratis / N/A'}</p> 
+                ${routeHTML} 
+
+                <hr style="margin: 0.8rem 0; border:0; border-top: 1px solid var(--border);"> 
+                <p><b>Notas & Consejos:</b></p> 
+                <p>${ev.details || 'Sin detalles adicionales.'}</p> 
+
+                <div style="margin-top:15px; display:flex; justify-content:space-between; gap:0.5rem;"> 
+                    <button onclick="editEventModal()" style="background:#0284c7; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:bold;"> 
+                        ✏️ Editar Evento 
+                    </button> 
+                    <button onclick="deleteEvent('${ev.title.replace(/'/g, "\\'")}', '${ev.date}')" style="background:#ef4444; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:bold;"> 
+                        🗑 Eliminar Evento 
+                    </button> 
+                </div> 
+            `; 
+            
+            document.getElementById('eventModal').style.display = 'flex'; 
+        } 
+
+        function openAddModal() {  
+            document.getElementById('modalFormHeaderTitle').innerText = "Añadir Nueva Actividad"; 
+            document.getElementById('addEventForm').reset(); 
+            document.getElementById('ev-old-title').value = ""; 
+            document.getElementById('ev-old-date').value = ""; 
+            toggleLocationFields(); 
+            document.getElementById('addModal').style.display = 'flex';  
+        } 
+
+        function editEventModal() { 
+            if (!currentModalEventObj) return; 
+            const ev = currentModalEventObj; 
+            
+            closeModal('eventModal'); 
+            document.getElementById('modalFormHeaderTitle').innerText = "Editar Actividad / Evento"; 
+            
+            document.getElementById('ev-old-title').value = ev.title; 
+            document.getElementById('ev-old-date').value = ev.date; 
+
+            document.getElementById('ev-title').value = ev.title; 
+            document.getElementById('ev-date').value = ev.date; 
+            document.getElementById('ev-hour').value = ev.startHour !== null ? ev.startHour : 8; 
+            document.getElementById('ev-end-date').value = ev.endDate || ev.date; 
+            document.getElementById('ev-end-hour').value = ev.endHour !== null ? ev.endHour : 10; 
+            document.getElementById('ev-duration').value = ev.durationHours || 2; 
+            document.getElementById('ev-type').value = ev.type || 'actividad'; 
+            document.getElementById('ev-booking-code').value = ev.bookingCode || ''; 
+            document.getElementById('ev-location').value = ev.location || ''; 
+            document.getElementById('ev-origin-link').value = ev.originLink || ''; 
+            document.getElementById('ev-dest-link').value = ev.destLink || ''; 
+            document.getElementById('ev-cost').value = ev.cost || ''; 
+            document.getElementById('ev-details').value = ev.details || ''; 
+
+            toggleLocationFields(); 
+            document.getElementById('addModal').style.display = 'flex'; 
+        } 
+
+        function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; } 
+
+        function toggleLocationFields() { 
+            const type = document.getElementById('ev-type').value; 
+            document.getElementById('single-location-group').style.display = type === 'transporte' ? 'none' : 'block'; 
+            document.getElementById('transport-location-group').style.display = type === 'transporte' ? 'flex' : 'none'; 
+        } 
+
+        function saveEvent(e) { 
+            e.preventDefault(); 
+            const type = document.getElementById('ev-type').value; 
+
+            const oldTitle = document.getElementById('ev-old-title').value; 
+            const oldDate = document.getElementById('ev-old-date').value; 
+
+            const newEv = { 
+                title: document.getElementById('ev-title').value, 
+                date: document.getElementById('ev-date').value, 
+                startHour: parseInt(document.getElementById('ev-hour').value) || 0, 
+                endDate: document.getElementById('ev-end-date').value || document.getElementById('ev-date').value, 
+                endHour: parseInt(document.getElementById('ev-end-hour').value) || 0, 
+                durationHours: parseInt(document.getElementById('ev-duration').value) || 1, 
+                type: type, 
+                bookingCode: document.getElementById('ev-booking-code').value, 
+                location: document.getElementById('ev-location').value, 
+                originLink: document.getElementById('ev-origin-link').value, 
+                destLink: document.getElementById('ev-dest-link').value, 
+                cost: document.getElementById('ev-cost').value, 
+                details: document.getElementById('ev-details').value, 
+                oldTitle: oldTitle, 
+                oldDate: oldDate 
+            }; 
+
+            if (oldTitle && oldDate) { 
+                localEvents = localEvents.filter(ev => !(ev.title === oldTitle && ev.date === oldDate)); 
+            } 
+
+            localEvents.push(newEv); 
+            autoDetectTripBounds(); 
+            renderHeaderDays(); 
+            buildGrid(localEvents); 
+
+            fetch(SCRIPT_URL, { 
+                method: "POST", 
+                body: JSON.stringify(newEv) 
+            }).then(res => console.log("Guardado en Google Sheets")).catch(err => console.error("Error al guardar:", err)); 
+
+            closeModal('addModal'); 
+            document.getElementById('addEventForm').reset(); 
+        } 
+
+        async function deleteEvent(title, start) { 
+            if (!confirm(`¿Estás seguro de que deseas eliminar "${title}"?`)) return; 
+
+            localEvents = localEvents.filter(e => !(e.title === title && e.date === start)); 
+            autoDetectTripBounds(); 
+            renderHeaderDays(); 
+            buildGrid(localEvents); 
+            closeModal('eventModal'); 
+
+            try { 
+                await fetch(SCRIPT_URL, { 
+                    method: 'POST', 
+                    mode: 'no-cors', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ 
+                        action: 'delete', 
+                        sheet: 'Itinerario', 
+                        title: title, 
+                        start: start 
+                    }) 
+                }); 
+            } catch (err) { 
+                alert('Error al sincronizar borrado.'); 
+            } 
+        } 
+
+        function renderTimeline() { 
+            const container = document.getElementById('timeline-list'); 
+            if (!container) return; 
+
+            let combined = []; 
+
+            accommodationsData.forEach(a => { 
+                let dObj = parseDateStr(a.start); 
+                combined.push({ 
+                    type: 'hotel', 
+                    title: a.name, 
+                    dateStr: a.start, 
+                    dateObj: dObj, 
+                    details: `Hotel verificado hasta ${a.end}`, 
+                    link: a.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a.name)}` 
+                }); 
+            }); 
+
+            localEvents.forEach(e => { 
+                let dObj = parseDateStr(e.date); 
+                let link = e.location || e.originLink || e.destLink || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.title)}`; 
+                let timeStr = e.startHour !== null ? `${e.startHour}:00hs` : 'Hora pendiente'; 
+                combined.push({ 
+                    type: e.type, 
+                    title: e.title, 
+                    dateStr: e.date, 
+                    dateObj: dObj, 
+                    details: `${timeStr} | ${e.details || ''}`, 
+                    link: link 
+                }); 
+            }); 
+
+            combined.sort((a, b) => (a.dateObj || 0) - (b.dateObj || 0)); 
+
+            container.innerHTML = combined.map(item => { 
+                let icon = item.type === 'transporte' ? '🚌' : (item.type === 'show' ? '🎸' : (item.type === 'hotel' ? '🏨' : '📍')); 
+                let mapsBtn = item.link.startsWith('http') ? `<a href="${item.link}" target="_blank" style="color:var(--primary); font-weight:bold; font-size:0.75rem;">🗺 Maps</a>` : ''; 
+
+                return ` 
+                    <div class="timeline-item"> 
+                        <div class="timeline-date">${item.dateStr}</div> 
+                        <h5>${icon} ${item.title}</h5> 
+                        <p style="color:var(--text-muted); font-size:0.75rem; margin-bottom:4px;">${item.details}</p> 
+                        ${mapsBtn} 
+                    </div>`; 
+            }).join(''); 
+        } 
+
+        function initLeafletMap() { 
+            if (leafletMap) return; 
+
+            leafletMap = L.map('leaflet-map').setView(CITY_COORDS.all, 11); 
+
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { 
+                maxZoom: 19, 
+                attribution: 'Tiles &copy; Esri' 
+            }).addTo(leafletMap); 
+
+            renderMapMarkers(); 
+        } 
+
+        // Función de geocodificado automático usando Nominatim para búsquedas dinámicas en CABA
+        async function geocodeLocation(query) {
+            const cleanQuery = query.toLowerCase().trim();
+            if (geocodeCache[cleanQuery]) return geocodeCache[cleanQuery];
+
+            for (let known in KNOWN_PLACES_COORDS) {
+                if (cleanQuery.includes(known)) {
+                    geocodeCache[cleanQuery] = KNOWN_PLACES_COORDS[known];
+                    return KNOWN_PLACES_COORDS[known];
+                }
             }
-        }
 
-        function convertCurrency(source) {
-            const ars = document.getElementById('calc-ars');
-            const usd = document.getElementById('calc-usd');
-            if (source === 'ars') {
-                usd.value = ars.value ? (parseFloat(ars.value) / USD_ARS_RATE).toFixed(2) : '';
-            } else {
-                ars.value = usd.value ? Math.round(parseFloat(usd.value) * USD_ARS_RATE) : '';
+            try {
+                const searchAddress = `${query}, Buenos Aires, Argentina`;
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchAddress)}&limit=1`);
+                const data = await res.json();
+                if (data && data.length > 0) {
+                    const coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+                    geocodeCache[cleanQuery] = coords;
+                    return coords;
+                }
+            } catch (e) {
+                console.warn("Geocodificación no disponible para:", query);
             }
+            return null;
         }
 
-        function initLeafletMap() {
-            leafletMap = L.map('leaflet-map').setView([-34.6037, -58.3816], 12);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap'
-            }).addTo(leafletMap);
-        }
+        async function renderMapMarkers() { 
+            if (!leafletMap) return; 
 
-        function zoomMapTo(zone) {
-            if (!leafletMap) return;
-            const coords = {
-                caba_centro: [-34.6037, -58.3816],
-                palermo: [-34.5889, -58.4305],
-                belgrano: [-34.5614, -58.4560],
-                all: [-34.6000, -58.4200]
-            };
-            leafletMap.setView(coords[zone] || coords.all, zone === 'all' ? 12 : 14);
-        }
+            mapMarkers.forEach(m => leafletMap.removeLayer(m)); 
+            mapMarkers = []; 
 
-        // LÓGICA CLAVE: Detección Dinámica de Estadía para Punto de Salida
-        function getActiveStayForDate(targetDateStr) {
-            return localEvents.find(e => e.type === 'sleep' && e.date === targetDateStr) || {
-                title: 'Estadía sin asignar',
-                location: 'CABA Centro (Referencia general)'
-            };
-        }
-
-        function calculateRouteAdvice(eventObj) {
-            const currentStay = getActiveStayForDate(eventObj.date);
-            const routeBox = document.getElementById('route-info-box');
-
-            let leadTimeMinutes = 60; // Margen por defecto
-            if (eventObj.type === 'show') leadTimeMinutes = 120; // 2 horas antes para recitales
-
-            const departureHour = Math.max(0, eventObj.hour - Math.floor(leadTimeMinutes / 60));
-
-            routeBox.innerHTML = `
-                <div class="timeline-item">
-                    <h5>🏠 Punto de Salida (Estadía Activa)</h5>
-                    <p><b>Lugar:</b> ${currentStay.title}</p>
-                    <p style="font-size:0.75rem; color:var(--text-muted);">${currentStay.location}</p>
-                </div>
-
-                <div class="timeline-item" style="border-left-color: #db2777;">
-                    <h5>🎯 Destino: ${eventObj.title}</h5>
-                    <p><b>Hora del Evento:</b> ${eventObj.hour}:00 hs</p>
-                    <p><b>Ubicación:</b> ${eventObj.location}</p>
-                </div>
-
-                <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:0.8rem; border-radius:6px; margin-top:0.8rem;">
-                    <h5 style="color:#166534;"><i class="fa-solid fa-clock"></i> Sugerencia de Salida</h5>
-                    <p style="font-size:0.85rem; color:#15803d; margin-top:4px;">
-                        Salí como máximo a las <b>${departureHour}:00 hs</b> (${leadTimeMinutes} min antes) para absorbers demoras, controles o filas.
-                    </p>
-                </div>
-            `;
-        }
-
-        function renderMapData() {
-            if (!leafletMap) return;
-            mapMarkers.forEach(m => leafletMap.removeLayer(m));
-            mapMarkers = [];
-
-            localEvents.forEach(ev => {
-                // Posicionamiento estimado para demostración visual
-                let lat = -34.6037 + (Math.random() - 0.5) * 0.05;
-                let lng = -58.3816 + (Math.random() - 0.5) * 0.05;
-
-                let marker = L.marker([lat, lng]).addTo(leafletMap);
-                marker.bindPopup(`<b>${ev.title}</b><br>${ev.type === 'sleep' ? '🏠 Estadía' : '🎯 Evento'}<br><button onclick='selectEventForRoute(${ev.id})' style="margin-top:4px; font-size:0.7rem; cursor:pointer;">Ver Ruta de Salida</button>`);
-                mapMarkers.push(marker);
-            });
-        }
-
-        function selectEventForRoute(eventId) {
-            const ev = localEvents.find(e => e.id === eventId);
-            if (ev) calculateRouteAdvice(ev);
-        }
-
-        function updateTravelerLabels() {
-            const selectPayer = document.getElementById('exp-payer');
-            if (selectPayer) {
-                selectPayer.innerHTML = `
-                    <option value="p1">${traveler1}</option>
-                    <option value="p2">${traveler2}</option>
-                `;
+            // 1. Renderizar Alojamiento
+            for (const acc of accommodationsData) {
+                const coords = await geocodeLocation(acc.name);
+                if (coords) {
+                    const mapSearchUrl = acc.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(acc.name)}`; 
+                    const marker = L.marker(coords).addTo(leafletMap); 
+                    
+                    marker.bindPopup(` 
+                        <div style="font-family:Inter, sans-serif;"> 
+                            <h4 style="margin:0 0 4px 0; color:#1e40af;">🏨 ${acc.name}</h4> 
+                            <p style="font-size:0.8rem; color:#475569; margin-bottom:8px;">Alojamiento (${acc.start} - ${acc.end})</p> 
+                            <a href="${mapSearchUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block; background:#2563eb; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:0.75rem; font-weight:bold;"> 
+                                🧭 Abrir en Google Maps 
+                            </a> 
+                        </div> 
+                    `); 
+                    mapMarkers.push(marker); 
+                }
             }
-            document.getElementById('lbl-p1').innerText = `Total Pagado por ${traveler1}:`;
-            document.getElementById('lbl-p2').innerText = `Total Pagado por ${traveler2}:`;
-        }
 
-        function resetTravelers() {
-            const p1 = prompt("Nombre del Viajero 1:", traveler1);
-            const p2 = prompt("Nombre del Viajero 2:", traveler2);
-            if (p1) { traveler1 = p1; localStorage.setItem('caba_traveler1', p1); }
-            if (p2) { traveler2 = p2; localStorage.setItem('caba_traveler2', p2); }
-            updateTravelerLabels();
-        }
+            // 2. Renderizar Eventos del Itinerario dinámicamente
+            for (const ev of localEvents) {
+                if (ev.type === 'sleep') continue; // Ya cubierto en Alojamiento
+                
+                const query = ev.location || ev.title;
+                if (!query || query.startsWith('http')) continue;
 
-        function addExpense(e) {
-            e.preventDefault();
-            const concept = document.getElementById('exp-concept').value;
-            const amount = parseFloat(document.getElementById('exp-amount').value);
-            const currency = document.getElementById('exp-currency').value;
-            const payer = document.getElementById('exp-payer').value;
-
-            const amountARS = currency === 'USD' ? amount * USD_ARS_RATE : amount;
-            expensesList.push({ concept, amountARS, payer });
-
-            calculateExpenses();
-            document.getElementById('expense-form').reset();
-            alert("Gasto registrado correctamente.");
-        }
-
-        function calculateExpenses() {
-            let totalP1 = 0, totalP2 = 0;
-            expensesList.forEach(exp => {
-                if (exp.payer === 'p1') totalP1 += exp.amountARS;
-                else totalP2 += exp.amountARS;
-            });
-
-            document.getElementById('total-p1').innerText = `$ ${totalP1.toLocaleString()} ARS`;
-            document.getElementById('total-p2').innerText = `$ ${totalP2.toLocaleString()} ARS`;
-
-            const diff = (totalP1 - totalP2) / 2;
-            const settlementBox = document.getElementById('settlement-text');
-
-            if (diff > 0) {
-                settlementBox.innerText = `${traveler2} debe pagarle $${Math.abs(diff).toLocaleString()} ARS a ${traveler1}`;
-            } else if (diff < 0) {
-                settlementBox.innerText = `${traveler1} debe pagarle $${Math.abs(diff).toLocaleString()} ARS a ${traveler2}`;
-            } else {
-                settlementBox.innerText = "Cuentas Saldadas";
+                const coords = await geocodeLocation(query);
+                if (coords) {
+                    const icon = ev.type === 'show' ? '🎸' : (ev.type === 'transporte' ? '🚌' : '📍');
+                    const marker = L.marker(coords).addTo(leafletMap);
+                    
+                    marker.bindPopup(`
+                        <div style="font-family:Inter, sans-serif;"> 
+                            <h4 style="margin:0 0 4px 0; color:#1e293b;">${icon} ${ev.title}</h4> 
+                            <p style="font-size:0.8rem; color:#475569; margin-bottom:8px;">${ev.date} (${ev.startHour !== null ? ev.startHour + ':00hs' : 'Pendiente'})</p> 
+                            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}" target="_blank" style="display:inline-block; background:#2563eb; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:0.75rem; font-weight:bold;"> 
+                                🧭 Abrir en Google Maps 
+                            </a> 
+                        </div> 
+                    `);
+                    mapMarkers.push(marker);
+                }
             }
-        }
+        } 
 
-        function openAddModal() { document.getElementById('addModal').style.display = 'flex'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function zoomMapTo(cityKey) { 
+            if (!leafletMap) initLeafletMap(); 
+            const coords = CITY_COORDS[cityKey] || CITY_COORDS.all; 
+            const zoom = (cityKey === 'all') ? 11 : 14; 
+            leafletMap.setView(coords, zoom); 
+        } 
 
-        function saveEvent(e) {
-            e.preventDefault();
-            const newEv = {
-                id: Date.now(),
-                title: document.getElementById('ev-title').value,
-                date: document.getElementById('ev-date').value,
-                hour: parseInt(document.getElementById('ev-hour').value),
-                duration: parseInt(document.getElementById('ev-duration').value),
-                type: document.getElementById('ev-type').value,
-                location: document.getElementById('ev-location').value
-            };
+        function updateTravelerLabels() { 
+            const selectPayer = document.getElementById('exp-payer'); 
+            const lblP1 = document.getElementById('lbl-p1'); 
+            const lblP2 = document.getElementById('lbl-p2'); 
 
-            localEvents.push(newEv);
-            localStorage.setItem('caba_events', JSON.stringify(localEvents));
-            closeModal('addModal');
-            alert("Guardado. Los puntos de salida en el mapa se actualizaron.");
-            if (leafletMap) renderMapData();
-        }
+            const p1Name = traveler1 || "Lukitas"; 
+            const p2Name = traveler2 || "Acompañante"; 
 
-        document.addEventListener('DOMContentLoaded', () => {
-            updateTravelerLabels();
-        });
-    </script>
-</body>
+            if (selectPayer) { 
+                selectPayer.innerHTML = ` 
+                    <option value="p1">${p1Name}</option> 
+                    <option value="p2">${p2Name}</option> 
+                `; 
+            } 
+            if (lblP1) lblP1.innerText = `Total Pagado por ${p1Name}:`; 
+            if (lblP2) lblP2.innerText = `Total Pagado por ${p2Name}:`; 
+        } 
+
+        function resetTravelers() { 
+            const p1 = prompt("Nombre del Viajero 1:", traveler1 || "Lukitas"); 
+            const p2 = prompt("Nombre del Viajero 2:", traveler2 || "Acompañante"); 
+            if (p1) { traveler1 = p1; localStorage.setItem('caba_lukitas_traveler1', p1); } 
+            if (p2) { traveler2 = p2; localStorage.setItem('caba_lukitas_traveler2', p2); } 
+            updateTravelerLabels(); 
+            loadExpensesFromSheet(); 
+        } 
+
+        async function loadExpensesFromSheet() { 
+            updateTravelerLabels(); 
+            try { 
+                const res = await fetch(`${SCRIPT_URL}?sheet=Gastos`); 
+                const expenses = await res.json(); 
+                
+                let totalP1USD = 0; 
+                let totalP2USD = 0; 
+                let totalP1ARS = 0; 
+                let totalP2ARS = 0; 
+
+                const p1Name = traveler1 || "Lukitas"; 
+                const p2Name = traveler2 || "Acompañante"; 
+
+                if (Array.isArray(expenses)) { 
+                    expenses.forEach(exp => { 
+                        let amountARS = parseFloat(exp.Monto_ARS || exp.MontoARS || exp.Monto_JPY || 0); 
+                        let amountUSD = parseFloat(exp.Monto_Dlr || exp.MontoUSD || 0); 
+                        
+                        if (amountUSD === 0 && amountARS > 0) amountUSD = amountARS / ARS_USD_RATE; 
+                        if (amountARS === 0 && amountUSD > 0) amountARS = amountUSD * ARS_USD_RATE; 
+
+                        let payer = exp.PagadoPor || exp.Payer || exp.payer; 
+
+                        if (payer === 'p1' || payer === p1Name || payer === 'Lukitas') { 
+                            totalP1USD += amountUSD; 
+                            totalP1ARS += amountARS; 
+                        } else if (payer === 'p2' || payer === p2Name) { 
+                            totalP2USD += amountUSD; 
+                            totalP2ARS += amountARS; 
+                        } 
+                    }); 
+                } 
+
+                document.getElementById('total-p1-usd').innerText = `$${totalP1USD.toFixed(2)} USD ($${Math.round(totalP1ARS).toLocaleString('es-AR')} ARS)`; 
+                document.getElementById('total-p2-usd').innerText = `$${totalP2USD.toFixed(2)} USD ($${Math.round(totalP2ARS).toLocaleString('es-AR')} ARS)`; 
+                document.getElementById('total-trip-usd').innerText = `$${(totalP1USD + totalP2USD).toFixed(2)} USD`; 
+
+                const settlementText = document.getElementById('settlement-text'); 
+                const diffARS = totalP1ARS - totalP2ARS; 
+                if (Math.abs(diffARS) < 10) { 
+                    settlementText.innerText = "Cuentas saldadas (0 ARS)"; 
+                } else if (diffARS > 0) { 
+                    settlementText.innerText = `${p2Name} le debe $${Math.round(diffARS / 2).toLocaleString('es-AR')} ARS a ${p1Name}`; 
+                } else { 
+                    settlementText.innerText = `${p1Name} le debe $${Math.round(Math.abs(diffARS) / 2).toLocaleString('es-AR')} ARS a ${p2Name}`; 
+                } 
+            } catch (e) { 
+                console.error("Error al cargar gastos:", e); 
+            } 
+        } 
+
+        function addExpense(e) { 
+            e.preventDefault(); 
+            const currency = document.getElementById('exp-currency').value; 
+            const rawAmount = parseFloat(document.getElementById('exp-amount').value) || 0; 
+            
+            const amountARS = currency === 'ARS' ? rawAmount : rawAmount * ARS_USD_RATE; 
+            const amountUSD = currency === 'USD' ? rawAmount : rawAmount / ARS_USD_RATE; 
+
+            const p1Name = traveler1 || "Lukitas"; 
+            const p2Name = traveler2 || "Acompañante"; 
+
+            const expenseData = { 
+                action: 'addExpense', 
+                sheet: 'Gastos', 
+                Fecha: document.getElementById('exp-date').value, 
+                Concepto: document.getElementById('exp-concept').value, 
+                Monto_ARS: Math.round(amountARS), 
+                Monto_Dlr: amountUSD.toFixed(2), 
+                PagadoPor: document.getElementById('exp-payer').value === 'p1' ? p1Name : p2Name, 
+                Categoria: document.getElementById('exp-category').value, 
+                DivididoPor: document.getElementById('exp-split').value 
+            }; 
+
+            fetch(SCRIPT_URL, { 
+                method: "POST", 
+                body: JSON.stringify(expenseData) 
+            }).then(() => loadExpensesFromSheet()).catch(err => console.error(err)); 
+
+            document.getElementById('expense-form').reset(); 
+        } 
+
+        async function initApp() { 
+            autoDetectTripBounds(); 
+            renderHeaderDays(); 
+            buildGrid([]); 
+
+            fetchLiveExchangeRate(); 
+            await loadAccommodationsFromSheet(); 
+            await loadEventsFromSheet(); 
+            
+            autoDetectTripBounds(); 
+            renderHeaderDays(); 
+            buildGrid(localEvents); 
+        } 
+
+        document.addEventListener('DOMContentLoaded', initApp); 
+    </script> 
+</body> 
 </html>
