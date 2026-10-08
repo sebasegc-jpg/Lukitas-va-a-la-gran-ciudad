@@ -795,10 +795,10 @@
                 const data = await res.json(); 
                 if (Array.isArray(data)) { 
                     accommodationsData = data.map(r => { 
-                        const name = r.Nombre || r.name || ''; 
-                        const start = r.CheckIn || r.start || ''; 
-                        const end = r.CheckOut || r.end || ''; 
-                        const mapUrl = r.Direccion || r.mapUrl || ''; 
+                        const name = r.Nombre || r.title || r.name || ''; 
+                        const start = r.CheckIn || r.start || r.date || ''; 
+                        const end = r.CheckOut || r.end || r.endDate || ''; 
+                        const mapUrl = r.Direccion || r.mapUrl || r.location || ''; 
                         return { name, start, end, mapUrl }; 
                     }).filter(a => a.name !== ''); 
                 } 
@@ -838,7 +838,7 @@
             } 
         } 
 
-        // LECTURA AJUSTADA - Recomendaciones: A: Titulo, B: Detalles, C: aiDetails
+        // LECTURA RECOMENDACIONES: A: Titulo, B: Detalles, C: aiDetails
         async function loadRecomendacionesFromSheet() { 
             const container = document.getElementById('recom-container'); 
             try { 
@@ -870,7 +870,7 @@
             } 
         } 
 
-        // LECTURA AJUSTADA - Shows: A: Titulo, B: Ubicacion, C: Detalles, D: aiDetails
+        // LECTURA SHOWS: A: Titulo, B: Ubicacion, C: Detalles, D: aiDetails
         async function loadShowsFromSheet() { 
             const container = document.getElementById('shows-container'); 
             try { 
@@ -936,47 +936,50 @@
             } 
 
             const promptText = `Eres un guía experto en Buenos Aires (CABA / AMBA), recitales, transporte, bodegones, ferias de ropa, anime y eventos.  
-            El usuario está consultando sobre: "${userQuery}". 
-            
-            Instrucciones: 
-            1. Si la consulta es sobre un trayecto o cómo llegar de un lugar a otro, detalla explícitamente qué líneas de colectivo, subtes (Líneas A, B, C, D, E, H) o Metrobús debe tomar, cuántas cuadras caminar y consejos de seguridad. 
-            2. Si es una recomendación general (bodegones, compras, paseos), brinda datos concretos, ubicaciones y platos/productos recomendados. 
-            3. Responde en español con formato Markdown claro y estructurado.`; 
+El usuario está consultando sobre: "${userQuery}". 
+ 
+Instrucciones: 
+1. Si la consulta es sobre un trayecto o cómo llegar de un lugar a otro, detalla explícitamente qué líneas de colectivo, subtes (Líneas A, B, C, D, E, H) o Metrobús debe tomar, cuántas cuadras caminar y consejos de seguridad. 
+2. Si es una recomendación general (bodegones, compras, paseos), brinda datos concretos, ubicaciones y platos/productos recomendados. 
+3. Responde en español con formato Markdown claro y estructurado.`; 
             
             let resultText = ""; 
-
-            // Configuración del modelo activo actual
-            const targetModel = 'gemini-3.6-flash'; 
+            const candidateModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-3.6-flash'];
 
             for (let i = 0; i < keys.length; i++) { 
                 const activeKey = keys[(currentKeyIndex + i) % keys.length]; 
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${encodeURIComponent(activeKey)}`;
                 
-                try { 
-                    const controller = new AbortController(); 
-                    // Timeout a 30 segundos para dar tiempo a la generación
-                    const timeoutId = setTimeout(() => controller.abort(), 30000); 
+                for (const model of candidateModels) {
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(activeKey)}`;
+                    
+                    const payload = {
+                        contents: [{ parts: [{ text: promptText }] }],
+                        tools: [{ googleSearch: {} }]
+                    };
 
-                    const response = await fetch(url, { 
-                        method: 'POST', 
-                        headers: { 'Content-Type': 'application/json' }, 
-                        body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] }), 
-                        signal: controller.signal 
-                    }); 
+                    try { 
+                        const controller = new AbortController(); 
+                        const timeoutId = setTimeout(() => controller.abort(), 25000); 
 
-                    clearTimeout(timeoutId); 
+                        const response = await fetch(url, { 
+                            method: 'POST', 
+                            headers: { 'Content-Type': 'application/json' }, 
+                            body: JSON.stringify(payload), 
+                            signal: controller.signal 
+                        }); 
 
-                    const data = await response.json(); 
-                    if (response.ok && data.candidates && data.candidates[0]?.content?.parts[0]?.text) { 
-                        resultText = data.candidates[0].content.parts[0].text; 
-                        currentKeyIndex = (currentKeyIndex + i + 1) % keys.length; 
-                        break; 
-                    } else {
-                        console.warn(`Error en respuesta API con modelo ${targetModel} (Clave índice ${i}):`, data);
-                    }
-                } catch (err) { 
-                    console.warn(`Error de red o tiempo agotado con modelo ${targetModel} (Clave índice ${i}):`, err); 
-                } 
+                        clearTimeout(timeoutId); 
+
+                        const data = await response.json(); 
+                        if (response.ok && data.candidates && data.candidates[0]?.content?.parts[0]?.text) { 
+                            resultText = data.candidates[0].content.parts[0].text; 
+                            currentKeyIndex = (currentKeyIndex + i + 1) % keys.length; 
+                            break; 
+                        } 
+                    } catch (err) { 
+                        console.warn(`Error con modelo ${model}:`, err); 
+                    } 
+                }
 
                 if (resultText) break; 
             } 
@@ -1003,11 +1006,10 @@
 
                 saveCustomRecommendationToSheet(userQuery, resultText, isShow ? "Shows" : "Recomendaciones"); 
             } else { 
-                alert("No se pudo obtener respuesta de Gemini. Podés presionar F12 en tu navegador y revisar la consola para ver el motivo del error."); 
+                alert("No se pudo obtener respuesta de Gemini. Revisa tus API Keys."); 
             } 
         } 
 
-        // GUARDADO AJUSTADO A LAS COLUMNAS DEFINIDAS
         async function saveCustomRecommendationToSheet(title, text, sheetName) { 
             try { 
                 let payload = { 
@@ -1340,7 +1342,15 @@
             const oldTitle = document.getElementById('ev-old-title').value; 
             const oldDate = document.getElementById('ev-old-date').value; 
 
+            let targetSheet = "Itinerario";
+            if (type === 'sleep') {
+                targetSheet = "Alojamiento";
+            } else if (type === 'show') {
+                targetSheet = "Shows";
+            }
+
             const newEv = { 
+                sheet: targetSheet, 
                 title: document.getElementById('ev-title').value, 
                 date: document.getElementById('ev-date').value, 
                 startHour: parseInt(document.getElementById('ev-hour').value) || 0, 
@@ -1362,7 +1372,17 @@
                 localEvents = localEvents.filter(ev => !(ev.title === oldTitle && ev.date === oldDate)); 
             } 
 
-            localEvents.push(newEv); 
+            if (type === 'sleep') {
+                accommodationsData.push({
+                    name: newEv.title,
+                    start: newEv.date,
+                    end: newEv.endDate,
+                    mapUrl: newEv.location
+                });
+            } else {
+                localEvents.push(newEv); 
+            }
+
             autoDetectTripBounds(); 
             renderHeaderDays(); 
             buildGrid(localEvents); 
@@ -1370,7 +1390,8 @@
             fetch(SCRIPT_URL, { 
                 method: "POST", 
                 body: JSON.stringify(newEv) 
-            }).then(res => console.log("Guardado en Google Sheets")).catch(err => console.error("Error al guardar:", err)); 
+            }).then(res => console.log(`Guardado en Google Sheets (${targetSheet})`))
+              .catch(err => console.error("Error al guardar:", err)); 
 
             closeModal('addModal'); 
             document.getElementById('addEventForm').reset(); 
