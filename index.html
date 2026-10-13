@@ -48,7 +48,8 @@
             body:has(#gastos.active) { background-image: url('gastos.png'), url('gastos.png'); } 
 
             .tab-banner { display: none !important; } 
-            main { max-width: 950px !important; padding: 0 1rem !important; } 
+            /* AMPLIADO PARA MOSTRAR LOS 7 DÍAS EN EN ESCRITORIO */
+            main { max-width: 1250px !important; padding: 0 1rem !important; } 
         } 
 
         header { background-color: var(--card-bg); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,0.02); } 
@@ -110,16 +111,16 @@
         .pending-btn { background: #f97316; color: white; border: none; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; cursor: pointer; } 
 
         .schedule-grid-container { background: var(--card-bg); border: 1px solid var(--border); border-radius: 0.5rem; overflow-x: auto; max-height: 75vh; overflow-y: auto; } 
-        .schedule-table { width: 100%; border-collapse: collapse; min-width: 1000px; table-layout: fixed; } 
-        .schedule-table th, .schedule-table td { border: 1px solid var(--border); padding: 0; text-align: center; font-size: 0.8rem; vertical-align: top; } 
+        .schedule-table { width: 100%; border-collapse: collapse; min-width: 100%; table-layout: fixed; } 
+        .schedule-table th, .schedule-table td { border: 1px solid var(--border); padding: 0; text-align: center; font-size: 0.78rem; vertical-align: top; } 
         .schedule-table tr { height: 38px; max-height: 38px; } 
         
         .schedule-table th { background: #f8fafc; position: sticky; top: 0; z-index: 10; height: 70px; padding: 0.4rem; } 
         .day-header { display: flex; flex-direction: column; justify-content: space-between; height: 100%; } 
-        .day-date { font-weight: 700; color: var(--text-dark); font-size: 0.85rem; } 
+        .day-date { font-weight: 700; color: var(--text-dark); font-size: 0.82rem; } 
         .day-stay { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px; padding: 0.2rem; font-size: 0.7rem; color: #1e40af; font-weight: 600; margin-top: 0.2rem; cursor: pointer; } 
 
-        .time-col { width: 70px; font-weight: 600; background: #f1f5f9; color: var(--text-muted); text-align: center !important; height: 38px; line-height: 38px; } 
+        .time-col { width: 60px; font-weight: 600; background: #f1f5f9; color: var(--text-muted); text-align: center !important; height: 38px; line-height: 38px; } 
 
         .event-block { border-radius: 4px; padding: 0.3rem 0.5rem; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: transform 0.1s; text-align: left; height: 100%; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-start; gap: 2px; } 
         .event-block:hover { transform: scale(1.01); } 
@@ -735,6 +736,7 @@
             buildGrid(localEvents); 
         } 
 
+        // PARSEADOR MEJORADO QUE NUNCA INVIERTE DÍAS/AÑOS
         function parseDateStr(rawDate) { 
             if (!rawDate) return null; 
             let clean = String(rawDate).split('T')[0].split(' ')[0].replace(/^"|"$/g, '').trim(); 
@@ -1400,35 +1402,40 @@
 
             accommodationsData.forEach(a => { 
                 let dObj = parseDateStr(a.start); 
+                let timeSort = dObj ? dObj.getTime() : 0;
                 combined.push({ 
                     type: 'hotel', 
                     title: a.name, 
-                    dateStr: a.start, 
-                    dateObj: dObj, 
-                    details: `Hotel verificado hasta ${a.end}`, 
+                    dateStr: formatDateStandard(a.start), 
+                    sortValue: timeSort, 
+                    details: `Hotel verificado hasta ${formatDateStandard(a.end)}`, 
                     link: a.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a.name)}` 
                 }); 
             }); 
 
             localEvents.forEach(e => { 
                 let dObj = parseDateStr(e.date); 
+                let hourOffset = (e.startHour !== null ? parseInt(e.startHour) : 0) * 3600000;
+                let timeSort = dObj ? (dObj.getTime() + hourOffset) : 0;
+
                 let link = e.location || e.originLink || e.destLink || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.title)}`; 
-                let timeStr = e.startHour !== null ? `${e.startHour}:00hs` : 'Hora pendiente'; 
+                let timeStr = e.startHour !== null ? `${e.startHour}:00 hs` : 'Hora pendiente'; 
+                
                 combined.push({ 
                     type: e.type, 
                     title: e.title, 
-                    dateStr: e.date, 
-                    dateObj: dObj, 
+                    dateStr: formatDateStandard(e.date), 
+                    sortValue: timeSort, 
                     details: `${timeStr} | ${e.details || ''}`, 
                     link: link 
                 }); 
             }); 
 
-            combined.sort((a, b) => (a.dateObj || 0) - (b.dateObj || 0)); 
+            combined.sort((a, b) => a.sortValue - b.sortValue); 
 
             container.innerHTML = combined.map(item => { 
-                let icon = item.type === 'transporte' ? '🚌' : (item.type === 'show' ? '🎸' : (item.type === 'hotel' ? '🏨' : '📍')); 
-                let mapsBtn = item.link.startsWith('http') ? `<a href="${item.link}" target="_blank" style="color:var(--primary); font-weight:bold; font-size:0.75rem;">🗺 Maps</a>` : `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.link)}" target="_blank" style="color:var(--primary); font-weight:bold; font-size:0.75rem;">🗺 Maps</a>`; 
+                let icon = item.type === 'transporte' ? '✈️' : (item.type === 'show' ? '🎸' : (item.type === 'hotel' ? '🏨' : '📍')); 
+                let mapsBtn = item.link.startsWith('http') ? `<a href="${item.link}" target="_blank" style="color:var(--primary); font-weight:bold; font-size:0.75rem;">🗺 Abrir Maps</a>` : `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.link)}" target="_blank" style="color:var(--primary); font-weight:bold; font-size:0.75rem;">🗺 Abrir Maps</a>`; 
 
                 return ` 
                     <div class="timeline-item"> 
@@ -1470,20 +1477,23 @@
 
         async function geocodeLocation(query) { 
             if (!query) return null;
-            const cleanQuery = query.toLowerCase().trim(); 
-            if (geocodeCache[cleanQuery]) return geocodeCache[cleanQuery]; 
+            let cleanQuery = String(query).replace(/^https?:\/\/.*$/g, '').trim(); 
+            if (!cleanQuery) return null;
+
+            const cacheKey = cleanQuery.toLowerCase();
+            if (geocodeCache[cacheKey]) return geocodeCache[cacheKey]; 
 
             try { 
-                const searchAddress = `${query}, Buenos Aires, Argentina`; 
+                const searchAddress = `${cleanQuery}, Buenos Aires, Argentina`; 
                 const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchAddress)}&limit=1`); 
                 const data = await res.json(); 
                 if (data && data.length > 0) { 
                     const coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)]; 
-                    geocodeCache[cleanQuery] = coords; 
+                    geocodeCache[cacheKey] = coords; 
                     return coords; 
                 } 
             } catch (e) { 
-                console.warn("Geocodificación no disponible para:", query); 
+                console.warn("Geocodificación no disponible para:", cleanQuery); 
             } 
             return null; 
         } 
