@@ -45,8 +45,6 @@
             } 
             body:has(#calendario.active) { background-image: url('itinerario.png'), url('itinerario.png'); } 
             body:has(#transporte.active) { background-image: url('mapa.png'), url('mapa.png'); } 
-            body:has(#reels.active) { background-image: url('recom.png'), url('recom.png'); } 
-            body:has(#shows.active) { background-image: url('shows.png'), url('shows.png'); } 
             body:has(#gastos.active) { background-image: url('gastos.png'), url('gastos.png'); } 
 
             .tab-banner { display: none !important; } 
@@ -85,8 +83,6 @@
 
         .banner-itinerario { background-image: url('itinerarioMovil.png'); } 
         .banner-mapa { background-image: url('mapaMovil.png'); } 
-        .banner-recom { background-image: url('recomMovil.png'); } 
-        .banner-shows { background-image: url('showsMovil.png'); } 
         .banner-gastos { background-image: url('gastosMovil.png'); } 
 
         .tab-inner-container { 
@@ -144,8 +140,6 @@
         .summary-title { display: flex; align-items: center; gap: 0.5rem; color: var(--text-dark); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } 
         .summary-badge { font-size: 0.72rem; padding: 2px 8px; border-radius: 12px; background: #e2e8f0; color: var(--text-muted); font-weight: 600; } 
         .compact-content { padding: 0.9rem; font-size: 0.82rem; color: var(--text-dark); line-height: 1.5; } 
-        .compact-content p { margin-bottom: 0.5rem; } 
-        .compact-content ul { padding-left: 1.2rem; margin-bottom: 0.5rem; } 
 
         .map-layout { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem; } 
         .map-container { flex: 2; min-width: 320px; height: 550px; border-radius: 0.5rem; overflow: hidden; border: 1px solid var(--border); position: relative; z-index: 1; } 
@@ -176,6 +170,10 @@
         .line-D { background: #008066; } 
         .line-E { background: #6f2b84; } 
         .line-H { background: #ffd400; color: #333; } 
+
+        .expense-table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.85rem; }
+        .expense-table th, .expense-table td { border: 1px solid var(--border); padding: 0.5rem; text-align: left; }
+        .expense-table th { background: #f8fafc; font-weight: 600; }
     </style> 
 </head> 
 <body> 
@@ -187,9 +185,6 @@
             </div> 
             
             <div class="external-links"> 
-                <button onclick="clearCabaKeys()" class="ext-btn" style="background:#fef3c7; border-color:#fcd34d; color:#92400e;"> 
-                    <i class="fa-solid fa-key"></i> Configurar API Keys 
-                </button> 
                 <a href="https://docs.google.com/spreadsheets/d/1IpVyZts6sthWAEfBHqCcXdzCI3f7uwwEkFwrkRdHyVE/edit" target="_blank" class="ext-btn"><i class="fa-solid fa-table"></i> Google Sheet</a> 
             </div> 
         </div> 
@@ -198,13 +193,7 @@
                 <i class="fa-regular fa-calendar-days"></i> Itinerario 
             </button> 
             <button class="tab-btn" onclick="switchTab('transporte', event)"> 
-                <i class="fa-solid fa-bus"></i> Mapa & Subte 
-            </button> 
-            <button class="tab-btn" onclick="switchTab('reels', event)"> 
-                <i class="fa-solid fa-utensils"></i> Recomendaciones 
-            </button> 
-            <button class="tab-btn" onclick="switchTab('shows', event)"> 
-                <i class="fa-solid fa-guitar"></i> El Recital & Shows 
+                <i class="fa-solid fa-map-location-dot"></i> Mapa & Recomendaciones 
             </button> 
             <button class="tab-btn" onclick="switchTab('gastos', event)"> 
                 <i class="fa-solid fa-money-bill-transfer"></i> Gastos 
@@ -246,32 +235,31 @@
             </div> 
         </section> 
 
-        <!-- MAPA, SUBTE Y COLECTIVOS --> 
+        <!-- MAPA & RECOMENDACIONES --> 
         <section id="transporte" class="tab-content"> 
             <div class="tab-banner banner-mapa"></div> 
             <div class="tab-inner-container"> 
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom:0.8rem;"> 
                     <div> 
-                        <h3>Mapa, Subtes y Rutas en CABA / AMBA</h3> 
-                        <p style="color: var(--text-muted); font-size:0.85rem;">Movilidad rápida, líneas de colectivo recomendadas y mapa interactivo.</p> 
+                        <h3>Mapa, Subtes y Cronología en CABA</h3> 
+                        <p style="color: var(--text-muted); font-size:0.85rem;">Puntos del itinerario, alojamientos y cálculo directo de rutas.</p> 
                     </div> 
                     <div class="zone-filters" style="margin-bottom:0;"> 
                         <button class="filter-btn" onclick="zoomMapTo('caba_centro')">📍 Centro / Obelisco</button> 
                         <button class="filter-btn" onclick="zoomMapTo('palermo')">📍 Palermo / Recoleta</button> 
                         <button class="filter-btn" onclick="zoomMapTo('belgrano')">📍 Belgrano / River</button> 
                         <button class="filter-btn" onclick="zoomMapTo('amba_norte')">🚆 AMBA Norte</button> 
-                        <button class="filter-btn active" onclick="zoomMapTo('all')">🗺 Ver Todo el AMBA</button> 
+                        <button class="filter-btn active" onclick="zoomMapTo('all')">🗺 Ver Todo</button> 
                     </div> 
                 </div> 
 
                 <div class="subway-guide"> 
-                    <h4 style="color:#1e40af; margin-bottom:0.4rem;"><i class="fa-solid fa-train-subway"></i> Guía Rápida de Red de Subtes (Llevá tu Tarjeta SUBE cargada)</h4> 
+                    <h4 style="color:#1e40af; margin-bottom:0.4rem;"><i class="fa-solid fa-train-subway"></i> Guía Rápida de Red de Subtes</h4> 
                     <p style="font-size:0.8rem; color:#334155;"> 
-                        <span class="subway-line line-A">Línea A</span> Plaza de Mayo ⇆ San Pedrito (Congreso, Caballito) |  
-                        <span class="subway-line line-B">Línea B</span> Leandro N. Alem ⇆ J.M. de Rosas (Corrientes, Teatros, Chacarita) |  
-                        <span class="subway-line line-D">Línea D</span> Catedral ⇆ Congreso de Tucumán (Palermo, Belgrano, Estadio River Plate) 
+                        <span class="subway-line line-A">Línea A</span> Plaza de Mayo ⇆ San Pedrito |  
+                        <span class="subway-line line-B">Línea B</span> Leandro N. Alem ⇆ J.M. de Rosas |  
+                        <span class="subway-line line-D">Línea D</span> Catedral ⇆ Congreso de Tucumán 
                     </p> 
-                    <p style="font-size:0.75rem; color:#64748b; margin-top:4px;">💡 <b>Consejo Movilidad:</b> Para trayectos nocturnos post-recital, el colectivo (Metrobús) opera 24hs. Consultá Google Maps o la app Moovit en tiempo real.</p> 
                 </div> 
                 
                 <div class="map-layout"> 
@@ -281,47 +269,26 @@
                     
                     <div class="timeline-container"> 
                         <h4 style="margin-bottom:0.8rem; color:var(--text-dark); border-bottom:2px solid var(--border); padding-bottom:0.4rem;"> 
-                            📅 Cronología de Recorrido 
+                            📅 Cronología del Viaje 
                         </h4> 
                         <div id="timeline-list"></div> 
                     </div> 
                 </div> 
-            </div> 
-        </section> 
 
-        <!-- RECOMENDACIONES --> 
-        <section id="reels" class="tab-content"> 
-            <div class="tab-banner banner-recom"></div> 
-            <div class="tab-inner-container"> 
-                <h3>Bodegones, Ropa, Anime & Parques en Buenos Aires</h3> 
-                <p style="color: var(--text-muted); margin-bottom: 0.8rem;">Buscá o guardá recomendaciones gastronómicas, compras y paseos:</p> 
+                <!-- SECCIÓN RECOMENDACIONES -->
+                <div style="margin-top: 2rem; border-top: 2px dashed var(--border); padding-top: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                        <div>
+                            <h4>💡 Lugares, Shows y Recomendaciones Guardadas</h4>
+                            <p style="font-size:0.8rem; color:var(--text-muted);">Puntos de interés, bodegones, conciertos y paseos sugeridos.</p>
+                        </div>
+                        <button onclick="openAddRecomModal()" class="btn-add-event" style="background:#0284c7;">➕ Nueva Recomendación</button>
+                    </div>
 
-                <div style="display: flex; gap: 0.5rem; margin-bottom: 0.8rem; max-width: 600px;"> 
-                    <input type="text" id="custom-recom-input" placeholder="Ej: Bodegones en Palermo, tiendas de manga en Abasto, ropa en Avellaneda..." style="flex: 1; padding: 0.6rem; border: 1px solid var(--border); border-radius: 6px;"> 
-                    <button onclick="searchCustomAI('recom')" style="background: var(--primary); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; font-weight: 600;">🔍 Buscar Recomendación</button> 
-                </div> 
-
-                <div class="compact-accordion-list" id="recom-container"> 
-                    <p style="color: var(--text-muted);">Cargando recomendaciones...</p> 
-                </div> 
-            </div> 
-        </section> 
-
-        <!-- SHOWS & RECITAL --> 
-        <section id="shows" class="tab-content"> 
-            <div class="tab-banner banner-shows"></div> 
-            <div class="tab-inner-container"> 
-                <h3>Guía y Recomendaciones para el Recital & Eventos</h3> 
-                <p style="color: var(--text-muted); margin-bottom: 0.8rem;">Información sobre el concierto, accesos, transporte de regreso y fechas de shows:</p> 
-
-                <div style="display: flex; gap: 0.5rem; margin-bottom: 0.8rem; max-width: 600px;"> 
-                    <input type="text" id="custom-shows-input" placeholder="Ej: Consejos de llegada a Movistar Arena / River, bandas teloneras..." style="flex: 1; padding: 0.6rem; border: 1px solid var(--border); border-radius: 6px;"> 
-                    <button onclick="searchCustomAI('shows')" style="background: #be185d; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; font-weight: 600;">🎟️ Buscar Info de Show</button> 
-                </div> 
-
-                <div class="compact-accordion-list" id="shows-container"> 
-                    <p style="color: var(--text-muted);">Cargando eventos y guía del recital...</p> 
-                </div> 
+                    <div class="compact-accordion-list" id="recom-container"> 
+                        <p style="color: var(--text-muted);">Cargando recomendaciones desde Google Sheets...</p> 
+                    </div> 
+                </div>
             </div> 
         </section> 
 
@@ -342,7 +309,7 @@
                 <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:1rem; border-radius:8px; margin-bottom:1.5rem;"> 
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.5rem;"> 
                         <h4 style="color:#166534;"><i class="fa-solid fa-calculator"></i> Conversor Rápido (Pesos ARS ⇆ Dólar USD)</h4> 
-                        <span id="rate-indicator" style="font-size:0.75rem; background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:12px; font-weight:bold;">Tasa estimada: 1 USD = $1250 ARS</span> 
+                        <span id="rate-indicator" style="font-size:0.75rem; background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:12px; font-weight:bold;">1 USD = $1250 ARS</span> 
                     </div> 
                     <div style="display:flex; gap:1rem; align-items:center; flex-wrap:wrap;"> 
                         <div style="flex:1; min-width:140px;"> 
@@ -358,8 +325,11 @@
                 </div> 
 
                 <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;"> 
-                    <form id="expense-form" onsubmit="addExpense(event)" style="background:#fff; padding:1.2rem; border-radius:8px; border:1px solid var(--border); flex:1; min-width:300px;"> 
-                        <h4 style="margin-bottom:1rem; color:var(--text-dark);">➕ Registrar Nuevo Gasto</h4> 
+                    <form id="expense-form" onsubmit="saveExpenseForm(event)" style="background:#fff; padding:1.2rem; border-radius:8px; border:1px solid var(--border); flex:1; min-width:300px;"> 
+                        <h4 id="expense-form-title" style="margin-bottom:1rem; color:var(--text-dark);">➕ Registrar / Editar Gasto</h4> 
+                        <input type="hidden" id="exp-old-concept" value="">
+                        <input type="hidden" id="exp-old-date" value="">
+
                         <div class="form-group"> 
                             <label>Fecha:</label> 
                             <input type="date" id="exp-date" required> 
@@ -408,7 +378,7 @@
                                 <option value="Compras">Compras / Manga / Ropa / Souvenirs</option> 
                             </select> 
                         </div> 
-                        <button type="submit" class="btn-add-event" style="width:100%; justify-content:center;">➕ Registrar Gasto</button> 
+                        <button type="submit" class="btn-add-event" style="width:100%; justify-content:center;">💾 Guardar Gasto</button> 
                     </form> 
 
                     <div style="background:#fff; padding:1.2rem; border-radius:8px; border:1px solid var(--border); width:340px; height:fit-content;"> 
@@ -435,6 +405,27 @@
                         </div> 
                     </div> 
                 </div> 
+
+                <!-- TABLA DE GASTOS CON EDICIÓN Y BORRADO -->
+                <div style="margin-top: 1.5rem; overflow-x: auto;">
+                    <h4>📋 Historial de Gastos Registrados</h4>
+                    <table class="expense-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Concepto</th>
+                                <th>Monto ARS</th>
+                                <th>Monto USD</th>
+                                <th>Pagó</th>
+                                <th>Categoría</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expense-table-body">
+                            <tr><td colspan="7" style="text-align:center; color:var(--text-muted);">Cargando gastos...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div> 
         </section> 
     </main> 
@@ -538,11 +529,53 @@
         </div> 
     </div> 
 
+    <!-- Modal Agregar Recomendación -->
+    <div class="modal" id="recomModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>➕ Agregar Nueva Recomendación / Lugar</h3>
+                <button class="close-btn" onclick="closeModal('recomModal')">&times;</button>
+            </div>
+            <form onsubmit="saveRecomForm(event)">
+                <div class="form-group">
+                    <label>Título / Nombre del Lugar:</label>
+                    <input type="text" id="rec-title" required placeholder="Ej: Bodegón Don Julio / Fito Páez en Movistar Arena">
+                </div>
+                <div class="form-group">
+                    <label>Tipo:</label>
+                    <select id="rec-type">
+                        <option value="Bodegón / Comida">Bodegón / Comida</option>
+                        <option value="Show / Evento">Show / Evento</option>
+                        <option value="Paseo / Cultura">Paseo / Cultura</option>
+                        <option value="Compras / Ropa">Compras / Ropa</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Fecha Tentativa (Opcional):</label>
+                    <input type="date" id="rec-date">
+                </div>
+                <div class="form-group">
+                    <label>Ubicación / Dirección:</label>
+                    <input type="text" id="rec-location" placeholder="Ej: Palermo / Corrientes 1234">
+                </div>
+                <div class="form-group">
+                    <label>Link Google Maps (Opcional):</label>
+                    <input type="text" id="rec-link" placeholder="Ej: https://maps.app.goo.gl/...">
+                </div>
+                <div class="form-group">
+                    <label>Detalles / Notas:</label>
+                    <textarea id="rec-details" rows="3" placeholder="Ej: Probar la milanesa napolitana. Ir temprano."></textarea>
+                </div>
+                <button type="submit" class="btn-add-event" style="width: 100%; justify-content: center;">Guardar Recomendación</button>
+            </form>
+        </div>
+    </div>
+
     <!-- Leaflet JS --> 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script> 
 
     <script> 
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwiuQoHFqIf80CBrgCntOzL1IYDXqzh-bdg1xJZZgNBS6l4diIDVDo_Urj8ihtDs2sN/exec"; 
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwhI2LqfUH3dVQ3CvfGoBTGQCN49HcUSzhMllCdqwcNZdcHh_JasQG4MgD-G0ewueuHKA/exec"; 
         let ARS_USD_RATE = 1250;  
 
         let START_DATE = null; 
@@ -550,13 +583,12 @@
         let totalWeeks = 2; 
         let localEvents = []; 
         let accommodationsData = []; 
+        let rawExpenses = [];
         
         let traveler1 = localStorage.getItem('caba_lukitas_traveler1') || ''; 
         let traveler2 = localStorage.getItem('caba_lukitas_traveler2') || ''; 
 
         let currentModalEventObj = null; 
-        let currentKeyIndex = 0; 
-
         let leafletMap = null; 
         let mapMarkers = []; 
         let geocodeCache = {};
@@ -589,29 +621,9 @@
             updateTravelerLabels(); 
         } 
 
-        function getApiKeys() { 
-            let raw = localStorage.getItem('CABA_GEMINI_API_KEYS') || localStorage.getItem('CABA_GEMINI_API_KEY'); 
-            if (!raw || raw.trim() === "") { 
-                raw = prompt("Ingresá tus API Keys de Gemini para CABA (hasta 3 separadas por coma):"); 
-                if (raw && raw.trim() !== "") { 
-                    raw = raw.trim(); 
-                    localStorage.setItem('CABA_GEMINI_API_KEYS', raw); 
-                } else { 
-                    return []; 
-                } 
-            } 
-            return raw.split(',').map(k => k.trim()).filter(k => k.length > 0); 
-        } 
-
-        function clearCabaKeys() { 
-            localStorage.removeItem('CABA_GEMINI_API_KEYS'); 
-            localStorage.removeItem('CABA_GEMINI_API_KEY'); 
-            alert("API Keys de CABA borradas. La próxima vez que busques una recomendación o show, te pedirá ingresarlas."); 
-        } 
-
         function formatMarkdown(text) { 
             if (!text) return ''; 
-            let formatted = text 
+            let formatted = String(text) 
                 .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
                 .replace(/\*(.*?)\*/g, '<em>$1</em>') 
                 .replace(/^### (.*$)/gim, '<h4 style="margin: 0.6rem 0 0.3rem 0; color: var(--primary);">$1</h4>') 
@@ -635,7 +647,7 @@
                     if (ind) ind.innerText = `Dólar Blue en Vivo: 1 USD = $${ARS_USD_RATE.toFixed(2)} ARS`; 
                 } 
             } catch(e) { 
-                console.warn("Usando tasa de cambio base ARS/USD."); 
+                console.warn("Usando tasa base ARS/USD."); 
             } 
         } 
 
@@ -685,9 +697,8 @@
                 ensureTravelerNames(); 
                 loadExpensesFromSheet(); 
             } 
-            if (tabId === 'reels') loadRecomendacionesFromSheet(); 
-            if (tabId === 'shows') loadShowsFromSheet(); 
             if (tabId === 'transporte') { 
+                loadRecomendacionesFromSheet();
                 setTimeout(() => { 
                     if (leafletMap) leafletMap.invalidateSize(); 
                     else initLeafletMap(); 
@@ -726,6 +737,15 @@
             let day = d.getDate().toString().padStart(2, '0'); 
             return `${year}-${month}-${day}`; 
         } 
+
+        function formatDateStandard(rawDate) {
+            let d = parseDateStr(rawDate);
+            if (!d) return rawDate || '';
+            let day = ("0" + d.getDate()).slice(-2);
+            let month = ("0" + (d.getMonth() + 1)).slice(-2);
+            let year = d.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
 
         function autoDetectTripBounds() { 
             let allDates = []; 
@@ -795,10 +815,10 @@
                 const data = await res.json(); 
                 if (Array.isArray(data)) { 
                     accommodationsData = data.map(r => { 
-                        const name = r.Nombre || r.title || r.name || ''; 
-                        const start = r.CheckIn || r.start || r.date || ''; 
-                        const end = r.CheckOut || r.end || r.endDate || ''; 
-                        const mapUrl = r.Direccion || r.mapUrl || r.location || ''; 
+                        const name = r.Nombre || r.title || ''; 
+                        const start = r.FechaInicio || r.CheckIn || ''; 
+                        const end = r.FechaFin || r.CheckOut || ''; 
+                        const mapUrl = r.Direccion || r.LinkReserva || ''; 
                         return { name, start, end, mapUrl }; 
                     }).filter(a => a.name !== ''); 
                 } 
@@ -815,22 +835,21 @@
                 if (Array.isArray(data)) { 
                     localEvents = data.map(row => { 
                         const title = row.Titulo || row.title || ''; 
-                        const date = row.Dia || row.date || ''; 
-                        const rawStart = row.HoraInicio !== undefined ? row.HoraInicio : row.startHour; 
+                        const date = row.FechaInicio || row.Dia || ''; 
+                        const rawStart = row.HoraInicio; 
                         const startHour = (rawStart !== "" && rawStart !== null && rawStart !== undefined && !isNaN(parseInt(rawStart))) ? parseInt(rawStart) : null; 
-                        const durationHours = parseInt(row.DuracionHoras || row.durationHours) || 1; 
-                        const type = row.Tipo || row.type || 'actividad'; 
-                        const location = row.Ubicacion || row.location || ''; 
-                        const cost = row.Costo || row.cost || ''; 
-                        const details = row.Detalles || row.details || ''; 
-                        const aiDetails = row.aiDetails || ''; 
-                        const bookingCode = row.CodigoReserva || row.bookingCode || ''; 
-                        const originLink = row.OrigenLink || row.originLink || ''; 
-                        const destLink = row.DestinoLink || row.destLink || ''; 
-                        const endDate = row.FechaLlegada || row.endDate || date; 
-                        const endHour = row.HoraLlegada !== undefined && row.HoraLlegada !== "" ? parseInt(row.HoraLlegada) : (startHour !== null ? startHour : 0); 
+                        const durationHours = parseInt(row.Duracion) || 1; 
+                        const type = row.Tipo || 'actividad'; 
+                        const location = row.UbicacionInicio || row.Ubicacion || ''; 
+                        const cost = row.Costo || ''; 
+                        const details = row.Detalles || ''; 
+                        const bookingCode = row.CodigoReserva || ''; 
+                        const originLink = row.UbicacionInicio || ''; 
+                        const destLink = row.UbicacionFin || ''; 
+                        const endDate = row.FechaFin || date; 
+                        const endHour = row.HoraFin !== undefined && row.HoraFin !== "" ? parseInt(row.HoraFin) : (startHour !== null ? startHour : 0); 
 
-                        return { title, date, startHour, durationHours, type, location, cost, details, aiDetails, bookingCode, originLink, destLink, endDate, endHour }; 
+                        return { title, date, startHour, durationHours, type, location, cost, details, bookingCode, originLink, destLink, endDate, endHour }; 
                     }).filter(e => e.title !== ''); 
                 } 
             } catch (error) { 
@@ -838,7 +857,6 @@
             } 
         } 
 
-        // LECTURA RECOMENDACIONES: A: Titulo, B: Detalles, C: aiDetails
         async function loadRecomendacionesFromSheet() { 
             const container = document.getElementById('recom-container'); 
             try { 
@@ -847,17 +865,32 @@
                 if (Array.isArray(data) && data.length > 0) { 
                     container.innerHTML = data.map(item => { 
                         const title = item.Titulo || item.title || 'Recomendación'; 
-                        const rawDetails = item.Detalles || item.details || item.aiDetails || ''; 
+                        const tipo = item.Tipo || 'Recomendación';
+                        const ubicacion = item.Ubicacion || '';
+                        const mapsUrl = item.LinkGoogleMaps || (ubicacion ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ubicacion)}` : '');
+                        const rawDetails = item.Detalles || ''; 
                         const formattedBody = formatMarkdown(rawDetails); 
                         
+                        const safeTitle = title.replace(/'/g, "\\'");
+                        const safeLoc = ubicacion.replace(/'/g, "\\'");
+                        const safeDet = rawDetails.replace(/'/g, "\\'").replace(/\n/g, ' ');
+
+                        let mapsBtn = mapsUrl ? `<a href="${mapsUrl}" target="_blank" style="color:var(--primary); font-weight:bold; margin-right:10px;">🗺️ Abrir en Maps</a>` : '';
+
                         return ` 
                             <details class="compact-item"> 
                                 <summary class="compact-summary"> 
-                                    <span class="summary-title">📍 ${title}</span> 
-                                    <span class="summary-badge">Ver recomendación</span> 
+                                    <span class="summary-title">📍 ${title} (${tipo})</span> 
+                                    <span class="summary-badge">Ver detalle</span> 
                                 </summary> 
                                 <div class="compact-content"> 
                                     ${formattedBody} 
+                                    <div style="margin-top:0.8rem; display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                                        ${mapsBtn}
+                                        <button onclick="promoteToItinerary('${safeTitle}', '${safeLoc}', '${safeDet}')" style="background:var(--primary); color:white; border:none; padding:4px 8px; border-radius:4px; font-weight:bold; cursor:pointer;">
+                                            ➕ Pasar al Itinerario
+                                        </button>
+                                    </div>
                                 </div> 
                             </details> 
                         `; 
@@ -870,180 +903,48 @@
             } 
         } 
 
-        // LECTURA SHOWS: A: Titulo, B: Ubicacion, C: Detalles, D: aiDetails
-        async function loadShowsFromSheet() { 
-            const container = document.getElementById('shows-container'); 
-            try { 
-                const res = await fetch(`${SCRIPT_URL}?sheet=Shows`); 
-                const data = await res.json(); 
-                if (Array.isArray(data) && data.length > 0) { 
-                    container.innerHTML = data.map(item => { 
-                        const title = item.Titulo || item.title || 'Show / Evento'; 
-                        const ubicacion = item.Ubicacion || item.location || '';
-                        const rawDetails = item.Detalles || item.details || item.aiDetails || ''; 
-                        const formattedBody = formatMarkdown(rawDetails); 
+        function openAddRecomModal() {
+            document.getElementById('recomModal').style.display = 'flex';
+        }
 
-                        let locBadge = ubicacion ? `<span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">📍 ${ubicacion}</span>` : '';
+        async function saveRecomForm(e) {
+            e.preventDefault();
+            const recomData = {
+                sheet: 'Recomendaciones',
+                Titulo: document.getElementById('rec-title').value,
+                Tipo: document.getElementById('rec-type').value,
+                FechaTentativa: formatDateStandard(document.getElementById('rec-date').value),
+                Ubicacion: document.getElementById('rec-location').value,
+                LinkGoogleMaps: document.getElementById('rec-link').value,
+                Detalles: document.getElementById('rec-details').value
+            };
 
-                        return ` 
-                            <details class="compact-item"> 
-                                <summary class="compact-summary"> 
-                                    <span class="summary-title">🎟️ ${title}</span> 
-                                    <span class="summary-badge" style="background:#fce7f3; color:#be185d;">Ver guía / cartelera</span> 
-                                </summary> 
-                                <div class="compact-content"> 
-                                    ${locBadge}
-                                    ${formattedBody} 
-                                </div> 
-                            </details> 
-                        `; 
-                    }).join(''); 
-                } else { 
-                    container.innerHTML = `<p style="color:var(--text-muted);">No hay shows o guías de recitales guardadas en Sheets aún.</p>`; 
-                } 
-            } catch(e) { 
-                container.innerHTML = `<p style="color:var(--text-muted);">Error al cargar shows.</p>`; 
-            } 
-        } 
+            fetch(SCRIPT_URL, {
+                method: "POST",
+                body: JSON.stringify(recomData)
+            }).then(() => {
+                loadRecomendacionesFromSheet();
+                closeModal('recomModal');
+            });
+        }
 
-        async function searchCustomAI(type) { 
-            const isShow = type === 'shows'; 
-            const inputId = isShow ? 'custom-shows-input' : 'custom-recom-input'; 
-            const containerId = isShow ? 'shows-container' : 'recom-container'; 
-            const inputEl = document.getElementById(inputId); 
-            
-            if (!inputEl) return; 
-            const userQuery = inputEl.value.trim(); 
-
-            if (!userQuery) { 
-                alert("Escribí lo que querés consultar (ej: bodegones en Palermo, recitales, tiendas anime en CABA...)."); 
-                return; 
-            } 
-
-            const container = document.getElementById(containerId); 
-            
-            const loadingCard = document.createElement('div'); 
-            loadingCard.id = 'temp-loading-card'; 
-            loadingCard.style.cssText = "padding:1rem; background:#fff; border:1px solid var(--border); border-radius:6px; margin-bottom:1rem; color:var(--text-muted); font-style:italic;"; 
-            loadingCard.innerHTML = `🔎 Consultando a Gemini sobre "${userQuery}"... Por favor aguardá unos segundos.`; 
-            container.prepend(loadingCard); 
-
-            const keys = getApiKeys(); 
-            if (!keys || keys.length === 0) { 
-                document.getElementById('temp-loading-card')?.remove(); 
-                alert("No hay API Keys guardadas en el navegador para CABA."); 
-                return; 
-            } 
-
-            const promptText = `Eres un guía experto en Buenos Aires (CABA / AMBA), recitales, transporte, bodegones, ferias de ropa, anime y eventos.  
-El usuario está consultando sobre: "${userQuery}". 
- 
-Instrucciones: 
-1. Si la consulta es sobre un trayecto o cómo llegar de un lugar a otro, detalla explícitamente qué líneas de colectivo, subtes (Líneas A, B, C, D, E, H) o Metrobús debe tomar, cuántas cuadras caminar y consejos de seguridad. 
-2. Si es una recomendación general (bodegones, compras, paseos), brinda datos concretos, ubicaciones y platos/productos recomendados. 
-3. Responde en español con formato Markdown claro y estructurado.`; 
-            
-            let resultText = ""; 
-            const candidateModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-3.6-flash'];
-
-            for (let i = 0; i < keys.length; i++) { 
-                const activeKey = keys[(currentKeyIndex + i) % keys.length]; 
-                
-                for (const model of candidateModels) {
-                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(activeKey)}`;
-                    
-                    const payload = {
-                        contents: [{ parts: [{ text: promptText }] }],
-                        tools: [{ googleSearch: {} }]
-                    };
-
-                    try { 
-                        const controller = new AbortController(); 
-                        const timeoutId = setTimeout(() => controller.abort(), 25000); 
-
-                        const response = await fetch(url, { 
-                            method: 'POST', 
-                            headers: { 'Content-Type': 'application/json' }, 
-                            body: JSON.stringify(payload), 
-                            signal: controller.signal 
-                        }); 
-
-                        clearTimeout(timeoutId); 
-
-                        const data = await response.json(); 
-                        if (response.ok && data.candidates && data.candidates[0]?.content?.parts[0]?.text) { 
-                            resultText = data.candidates[0].content.parts[0].text; 
-                            currentKeyIndex = (currentKeyIndex + i + 1) % keys.length; 
-                            break; 
-                        } 
-                    } catch (err) { 
-                        console.warn(`Error con modelo ${model}:`, err); 
-                    } 
-                }
-
-                if (resultText) break; 
-            } 
-
-            document.getElementById('temp-loading-card')?.remove(); 
-
-            if (resultText) { 
-                const formattedBody = formatMarkdown(resultText); 
-                
-                const newAccordion = ` 
-                    <details class="compact-item" open style="border: 2px solid var(--primary); margin-bottom:0.8rem;"> 
-                        <summary class="compact-summary" style="background: #eff6ff;"> 
-                            <span class="summary-title">✨ 🎯 Consulta CABA: ${userQuery}</span> 
-                            <span class="summary-badge" style="background:var(--primary); color:white;">Respuesta IA en vivo</span> 
-                        </summary> 
-                        <div class="compact-content"> 
-                            ${formattedBody} 
-                        </div> 
-                    </details> 
-                `; 
-
-                container.innerHTML = newAccordion + container.innerHTML; 
-                inputEl.value = ''; 
-
-                saveCustomRecommendationToSheet(userQuery, resultText, isShow ? "Shows" : "Recomendaciones"); 
-            } else { 
-                alert("No se pudo obtener respuesta de Gemini. Revisa tus API Keys."); 
-            } 
-        } 
-
-        async function saveCustomRecommendationToSheet(title, text, sheetName) { 
-            try { 
-                let payload = { 
-                    sheet: sheetName, 
-                    title: title, 
-                    details: text, 
-                    aiDetails: text 
-                };
-
-                if (sheetName === 'Shows') {
-                    payload.location = 'CABA / AMBA';
-                }
-
-                await fetch(SCRIPT_URL, { 
-                    method: 'POST', 
-                    mode: 'no-cors', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify(payload) 
-                }); 
-            } catch (err) { 
-                console.warn('Error al guardar en Google Sheets:', err); 
-            } 
-        } 
+        function promoteToItinerary(title, location, details) {
+            openAddModal();
+            document.getElementById('ev-title').value = title;
+            document.getElementById('ev-location').value = location;
+            document.getElementById('ev-details').value = details;
+        }
 
         function renderHeaderDays() { 
             const headerRow = document.getElementById('table-header-days'); 
             if (!headerRow) return; 
             const dates = getDatesForCurrentWeek(); 
-            const dayNamesLunesADomingo = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']; 
+            const dayNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']; 
 
             let html = `<th class="time-col">Hora</th>`; 
             dates.forEach(d => { 
                 let dayIdx = (d.getDay() + 6) % 7; 
-                let formattedDate = `${dayNamesLunesADomingo[dayIdx]} ${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`; 
+                let formattedDate = `${dayNames[dayIdx]} ${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`; 
                 
                 let acc = accommodationsData.find(a => { 
                     let startObj = parseDateStr(a.start); 
@@ -1129,19 +1030,6 @@ Instrucciones:
                         for (let h = startH; h < endH; h++) { 
                             occupiedCells[h][dayIdx] = true; 
                         } 
-                    } else { 
-                        let diffDays = Math.round((d - evStartDate) / (1000 * 60 * 60 * 24)); 
-                        if (diffDays > 0) { 
-                            let hoursPassedBeforeToday = (diffDays * 24) - e.startHour; 
-                            let remainingHoursToday = rawDuration - hoursPassedBeforeToday; 
-
-                            if (remainingHoursToday > 0) { 
-                                let endH = Math.min(24, remainingHoursToday); 
-                                for (let h = 0; h < endH; h++) { 
-                                    occupiedCells[h][dayIdx] = true; 
-                                } 
-                            } 
-                        } 
                     } 
                 }); 
             }); 
@@ -1159,27 +1047,11 @@ Instrucciones:
                         return evDateObj && formatDateToISO(evDateObj) === currentDateISO && e.startHour === hour; 
                     }); 
 
-                    let evContinuation = null; 
-                    if (!evStart && hour === 0) { 
-                        evContinuation = validEvents.find(e => { 
-                            let evStartDate = parseDateStr(e.date); 
-                            if (!evStartDate) return false; 
-                            let diffDays = Math.round((d - evStartDate) / (1000 * 60 * 60 * 24)); 
-                            if (diffDays <= 0) return false; 
-
-                            let hoursPassedBeforeToday = (diffDays * 24) - e.startHour; 
-                            let remainingHoursToday = (parseInt(e.durationHours) || 1) - hoursPassedBeforeToday; 
-                            return remainingHoursToday > 0; 
-                        }); 
-                    } 
-
                     if (evStart) { 
                         const rawDuration = parseInt(evStart.durationHours) || 1; 
                         let visualSpan = Math.min(rawDuration, 24 - hour); 
 
                         let locText = evStart.type === 'transporte' ? `${evStart.originLink || ''} ➔ ${evStart.destLink || ''}` : (evStart.location || ''); 
-                        if (evStart.type === 'transporte' && (!evStart.originLink && !evStart.destLink)) locText = evStart.location || ''; 
-
                         let safeTitle = evStart.title.replace(/'/g, "\\'"); 
                         let icon = evStart.type === 'transporte' ? '🚌' : (evStart.type === 'show' ? '🎸' : (evStart.type === 'sleep' ? '🏨' : '📍')); 
 
@@ -1187,23 +1059,6 @@ Instrucciones:
                             <div class="event-block event-${evStart.type || 'actividad'}" onclick="showModalByObject('${safeTitle}', '${evStart.date}', ${evStart.startHour})"> 
                                 <div class="event-title-line">${icon} ${evStart.title}</div> 
                                 <div class="event-subtitle-line">${rawDuration}h totales ${locText ? '| ' + locText : ''}</div> 
-                            </div> 
-                        </td>`; 
-                    } else if (evContinuation) { 
-                        let evStartDate = parseDateStr(evContinuation.date); 
-                        let diffDays = Math.round((d - evStartDate) / (1000 * 60 * 60 * 24)); 
-                        let hoursPassedBeforeToday = (diffDays * 24) - evContinuation.startHour; 
-                        let remainingHoursToday = (parseInt(evContinuation.durationHours) || 1) - hoursPassedBeforeToday; 
-                        
-                        let visualSpan = Math.min(remainingHoursToday, 24); 
-
-                        let safeTitle = evContinuation.title.replace(/'/g, "\\'"); 
-                        let icon = evContinuation.type === 'transporte' ? '🚌' : (evContinuation.type === 'show' ? '🎸' : (evContinuation.type === 'sleep' ? '🏨' : '📍')); 
-
-                        rowHTML += `<td rowspan="${visualSpan}" style="padding:1px; vertical-align:top; height:${visualSpan * 38}px;"> 
-                            <div class="event-block event-${evContinuation.type || 'actividad'}" onclick="showModalByObject('${safeTitle}', '${evContinuation.date}', ${evContinuation.startHour})"> 
-                                <div class="event-title-line">${icon} ${evContinuation.title} (Cont.)</div> 
-                                <div class="event-subtitle-line">Llegada / Fin: ${visualSpan}:00hs</div> 
                             </div> 
                         </td>`; 
                     } else { 
@@ -1342,46 +1197,69 @@ Instrucciones:
             const oldTitle = document.getElementById('ev-old-title').value; 
             const oldDate = document.getElementById('ev-old-date').value; 
 
-            let targetSheet = "Itinerario";
-            if (type === 'sleep') {
-                targetSheet = "Alojamiento";
-            } else if (type === 'show') {
-                targetSheet = "Shows";
-            }
+            let targetSheet = "Itinerario"; 
+            if (type === 'sleep') { 
+                targetSheet = "Alojamiento"; 
+            } 
+
+            const formattedStartDate = formatDateStandard(document.getElementById('ev-date').value);
+            const formattedEndDate = formatDateStandard(document.getElementById('ev-end-date').value || document.getElementById('ev-date').value);
 
             const newEv = { 
                 sheet: targetSheet, 
-                title: document.getElementById('ev-title').value, 
-                date: document.getElementById('ev-date').value, 
-                startHour: parseInt(document.getElementById('ev-hour').value) || 0, 
-                endDate: document.getElementById('ev-end-date').value || document.getElementById('ev-date').value, 
-                endHour: parseInt(document.getElementById('ev-end-hour').value) || 0, 
-                durationHours: parseInt(document.getElementById('ev-duration').value) || 1, 
-                type: type, 
-                bookingCode: document.getElementById('ev-booking-code').value, 
-                location: document.getElementById('ev-location').value, 
-                originLink: document.getElementById('ev-origin-link').value, 
-                destLink: document.getElementById('ev-dest-link').value, 
-                cost: document.getElementById('ev-cost').value, 
-                details: document.getElementById('ev-details').value, 
+                Titulo: document.getElementById('ev-title').value, 
+                Tipo: type,
+                FechaInicio: formattedStartDate, 
+                HoraInicio: parseInt(document.getElementById('ev-hour').value) || 0, 
+                FechaFin: formattedEndDate, 
+                HoraFin: parseInt(document.getElementById('ev-end-hour').value) || 0, 
+                Duracion: parseInt(document.getElementById('ev-duration').value) || 1, 
+                CodigoReserva: document.getElementById('ev-booking-code').value, 
+                UbicacionInicio: type === 'transporte' ? document.getElementById('ev-origin-link').value : document.getElementById('ev-location').value, 
+                UbicacionFin: type === 'transporte' ? document.getElementById('ev-dest-link').value : '', 
+                Costo: document.getElementById('ev-cost').value, 
+                Detalles: document.getElementById('ev-details').value, 
                 oldTitle: oldTitle, 
                 oldDate: oldDate 
             }; 
+
+            if (type === 'sleep') {
+                newEv.Nombre = newEv.Titulo;
+                newEv.Ciudad = 'CABA';
+                newEv.CheckIn = newEv.HoraInicio;
+                newEv.CheckOut = newEv.HoraFin;
+                newEv.LinkReserva = newEv.CodigoReserva;
+                newEv.Direccion = newEv.UbicacionInicio;
+            }
 
             if (oldTitle && oldDate) { 
                 localEvents = localEvents.filter(ev => !(ev.title === oldTitle && ev.date === oldDate)); 
             } 
 
-            if (type === 'sleep') {
-                accommodationsData.push({
-                    name: newEv.title,
-                    start: newEv.date,
-                    end: newEv.endDate,
-                    mapUrl: newEv.location
-                });
-            } else {
-                localEvents.push(newEv); 
-            }
+            if (type === 'sleep') { 
+                accommodationsData.push({ 
+                    name: newEv.Titulo, 
+                    start: newEv.FechaInicio, 
+                    end: newEv.FechaFin, 
+                    mapUrl: newEv.UbicacionInicio 
+                }); 
+            } else { 
+                localEvents.push({
+                    title: newEv.Titulo,
+                    date: newEv.FechaInicio,
+                    startHour: newEv.HoraInicio,
+                    durationHours: newEv.Duracion,
+                    type: newEv.Tipo,
+                    location: newEv.UbicacionInicio,
+                    cost: newEv.Costo,
+                    details: newEv.Detalles,
+                    bookingCode: newEv.CodigoReserva,
+                    originLink: newEv.UbicacionInicio,
+                    destLink: newEv.UbicacionFin,
+                    endDate: newEv.FechaFin,
+                    endHour: newEv.HoraFin
+                }); 
+            } 
 
             autoDetectTripBounds(); 
             renderHeaderDays(); 
@@ -1390,8 +1268,7 @@ Instrucciones:
             fetch(SCRIPT_URL, { 
                 method: "POST", 
                 body: JSON.stringify(newEv) 
-            }).then(res => console.log(`Guardado en Google Sheets (${targetSheet})`))
-              .catch(err => console.error("Error al guardar:", err)); 
+            }).then(() => console.log(`Guardado en Google Sheets (${targetSheet})`)); 
 
             closeModal('addModal'); 
             document.getElementById('addEventForm').reset(); 
@@ -1409,13 +1286,11 @@ Instrucciones:
             try { 
                 await fetch(SCRIPT_URL, { 
                     method: 'POST', 
-                    mode: 'no-cors', 
-                    headers: { 'Content-Type': 'application/json' }, 
                     body: JSON.stringify({ 
                         action: 'delete', 
                         sheet: 'Itinerario', 
                         title: title, 
-                        start: start 
+                        date: start 
                     }) 
                 }); 
             } catch (err) { 
@@ -1484,31 +1359,31 @@ Instrucciones:
             renderMapMarkers(); 
         } 
 
-        async function geocodeLocation(query) {
-            const cleanQuery = query.toLowerCase().trim();
-            if (geocodeCache[cleanQuery]) return geocodeCache[cleanQuery];
+        async function geocodeLocation(query) { 
+            const cleanQuery = query.toLowerCase().trim(); 
+            if (geocodeCache[cleanQuery]) return geocodeCache[cleanQuery]; 
 
-            for (let known in KNOWN_PLACES_COORDS) {
-                if (cleanQuery.includes(known)) {
-                    geocodeCache[cleanQuery] = KNOWN_PLACES_COORDS[known];
-                    return KNOWN_PLACES_COORDS[known];
-                }
-            }
+            for (let known in KNOWN_PLACES_COORDS) { 
+                if (cleanQuery.includes(known)) { 
+                    geocodeCache[cleanQuery] = KNOWN_PLACES_COORDS[known]; 
+                    return KNOWN_PLACES_COORDS[known]; 
+                } 
+            } 
 
-            try {
-                const searchAddress = `${query}, Buenos Aires, Argentina`;
-                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchAddress)}&limit=1`);
-                const data = await res.json();
-                if (data && data.length > 0) {
-                    const coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
-                    geocodeCache[cleanQuery] = coords;
-                    return coords;
-                }
-            } catch (e) {
-                console.warn("Geocodificación no disponible para:", query);
-            }
-            return null;
-        }
+            try { 
+                const searchAddress = `${query}, Buenos Aires, Argentina`; 
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchAddress)}&limit=1`); 
+                const data = await res.json(); 
+                if (data && data.length > 0) { 
+                    const coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)]; 
+                    geocodeCache[cleanQuery] = coords; 
+                    return coords; 
+                } 
+            } catch (e) { 
+                console.warn("Geocodificación no disponible para:", query); 
+            } 
+            return null; 
+        } 
 
         async function renderMapMarkers() { 
             if (!leafletMap) return; 
@@ -1516,9 +1391,9 @@ Instrucciones:
             mapMarkers.forEach(m => leafletMap.removeLayer(m)); 
             mapMarkers = []; 
 
-            for (const acc of accommodationsData) {
-                const coords = await geocodeLocation(acc.name);
-                if (coords) {
+            for (const acc of accommodationsData) { 
+                const coords = await geocodeLocation(acc.name); 
+                if (coords) { 
                     const mapSearchUrl = acc.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(acc.name)}`; 
                     const marker = L.marker(coords).addTo(leafletMap); 
                     
@@ -1532,21 +1407,21 @@ Instrucciones:
                         </div> 
                     `); 
                     mapMarkers.push(marker); 
-                }
-            }
+                } 
+            } 
 
-            for (const ev of localEvents) {
+            for (const ev of localEvents) { 
                 if (ev.type === 'sleep') continue; 
                 
-                const query = ev.location || ev.title;
-                if (!query || query.startsWith('http')) continue;
+                const query = ev.location || ev.title; 
+                if (!query || query.startsWith('http')) continue; 
 
-                const coords = await geocodeLocation(query);
-                if (coords) {
-                    const icon = ev.type === 'show' ? '🎸' : (ev.type === 'transporte' ? '🚌' : '📍');
-                    const marker = L.marker(coords).addTo(leafletMap);
+                const coords = await geocodeLocation(query); 
+                if (coords) { 
+                    const icon = ev.type === 'show' ? '🎸' : (ev.type === 'transporte' ? '🚌' : '📍'); 
+                    const marker = L.marker(coords).addTo(leafletMap); 
                     
-                    marker.bindPopup(`
+                    marker.bindPopup(` 
                         <div style="font-family:Inter, sans-serif;"> 
                             <h4 style="margin:0 0 4px 0; color:#1e293b;">${icon} ${ev.title}</h4> 
                             <p style="font-size:0.8rem; color:#475569; margin-bottom:8px;">${ev.date} (${ev.startHour !== null ? ev.startHour + ':00hs' : 'Pendiente'})</p> 
@@ -1554,10 +1429,10 @@ Instrucciones:
                                 🧭 Abrir en Google Maps 
                             </a> 
                         </div> 
-                    `);
-                    mapMarkers.push(marker);
-                }
-            }
+                    `); 
+                    mapMarkers.push(marker); 
+                } 
+            } 
         } 
 
         function zoomMapTo(cityKey) { 
@@ -1599,6 +1474,7 @@ Instrucciones:
             try { 
                 const res = await fetch(`${SCRIPT_URL}?sheet=Gastos`); 
                 const expenses = await res.json(); 
+                rawExpenses = Array.isArray(expenses) ? expenses : [];
                 
                 let totalP1USD = 0; 
                 let totalP2USD = 0; 
@@ -1608,15 +1484,18 @@ Instrucciones:
                 const p1Name = traveler1 || "Lukitas"; 
                 const p2Name = traveler2 || "Acompañante"; 
 
-                if (Array.isArray(expenses)) { 
-                    expenses.forEach(exp => { 
-                        let amountARS = parseFloat(exp.Monto_ARS || exp.MontoARS || exp.Monto_JPY || 0); 
-                        let amountUSD = parseFloat(exp.Monto_Dlr || exp.MontoUSD || 0); 
+                const tbody = document.getElementById('expense-table-body');
+                tbody.innerHTML = '';
+
+                if (rawExpenses.length > 0) { 
+                    rawExpenses.forEach(exp => { 
+                        let amountARS = parseFloat(exp.Monto_ARS || 0); 
+                        let amountUSD = parseFloat(exp.Monto_Dlr || 0); 
                         
                         if (amountUSD === 0 && amountARS > 0) amountUSD = amountARS / ARS_USD_RATE; 
                         if (amountARS === 0 && amountUSD > 0) amountARS = amountUSD * ARS_USD_RATE; 
 
-                        let payer = exp.PagadoPor || exp.Payer || exp.payer; 
+                        let payer = exp.PagadoPor || ''; 
 
                         if (payer === 'p1' || payer === p1Name || payer === 'Lukitas') { 
                             totalP1USD += amountUSD; 
@@ -1625,8 +1504,28 @@ Instrucciones:
                             totalP2USD += amountUSD; 
                             totalP2ARS += amountARS; 
                         } 
+
+                        const safeConcept = String(exp.Concepto || '').replace(/'/g, "\\'");
+                        const safeDate = String(exp.Fecha || '').replace(/'/g, "\\'");
+
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${exp.Fecha || ''}</td>
+                            <td><b>${exp.Concepto || ''}</b></td>
+                            <td>$${Math.round(amountARS).toLocaleString('es-AR')} ARS</td>
+                            <td>$${amountUSD.toFixed(2)} USD</td>
+                            <td>${payer}</td>
+                            <td>${exp.Categoria || ''}</td>
+                            <td>
+                                <button onclick="editExpenseRow('${safeConcept}', '${safeDate}')" style="background:#0284c7; color:white; border:none; padding:2px 6px; border-radius:3px; cursor:pointer; font-weight:bold;">✏️</button>
+                                <button onclick="deleteExpenseRow('${safeConcept}', '${safeDate}')" style="background:#ef4444; color:white; border:none; padding:2px 6px; border-radius:3px; cursor:pointer; font-weight:bold;">🗑</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
                     }); 
-                } 
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">No hay gastos registrados.</td></tr>`;
+                }
 
                 document.getElementById('total-p1-usd').innerText = `$${totalP1USD.toFixed(2)} USD ($${Math.round(totalP1ARS).toLocaleString('es-AR')} ARS)`; 
                 document.getElementById('total-p2-usd').innerText = `$${totalP2USD.toFixed(2)} USD ($${Math.round(totalP2ARS).toLocaleString('es-AR')} ARS)`; 
@@ -1646,7 +1545,44 @@ Instrucciones:
             } 
         } 
 
-        function addExpense(e) { 
+        function editExpenseRow(concept, date) {
+            const exp = rawExpenses.find(e => String(e.Concepto) === concept && String(e.Fecha) === date);
+            if (!exp) return;
+
+            document.getElementById('exp-old-concept').value = exp.Concepto;
+            document.getElementById('exp-old-date').value = exp.Fecha;
+
+            document.getElementById('exp-date').value = formatDateToISO(parseDateStr(exp.Fecha));
+            document.getElementById('exp-concept').value = exp.Concepto;
+            document.getElementById('exp-currency').value = exp.Monto_Dlr ? 'USD' : 'ARS';
+            document.getElementById('exp-amount').value = exp.Monto_Dlr ? exp.Monto_Dlr : exp.Monto_ARS;
+            document.getElementById('exp-payer').value = (exp.PagadoPor === traveler1 || exp.PagadoPor === 'Lukitas') ? 'p1' : 'p2';
+            document.getElementById('exp-category').value = exp.Categoria || 'Entradas';
+            document.getElementById('exp-split').value = exp.DivididoPor || 'both';
+
+            document.getElementById('expense-form-title').innerText = "✏️ Editar Gasto";
+        }
+
+        async function deleteExpenseRow(concept, date) {
+            if (!confirm(`¿Estás seguro de eliminar el gasto "${concept}"?`)) return;
+
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'delete',
+                        sheet: 'Gastos',
+                        title: concept,
+                        date: date
+                    })
+                });
+                loadExpensesFromSheet();
+            } catch (err) {
+                alert("Error al eliminar el gasto.");
+            }
+        }
+
+        function saveExpenseForm(e) { 
             e.preventDefault(); 
             const currency = document.getElementById('exp-currency').value; 
             const rawAmount = parseFloat(document.getElementById('exp-amount').value) || 0; 
@@ -1657,24 +1593,32 @@ Instrucciones:
             const p1Name = traveler1 || "Lukitas"; 
             const p2Name = traveler2 || "Acompañante"; 
 
+            const oldConcept = document.getElementById('exp-old-concept').value;
+            const oldDate = document.getElementById('exp-old-date').value;
+
             const expenseData = { 
-                action: 'addExpense', 
                 sheet: 'Gastos', 
-                Fecha: document.getElementById('exp-date').value, 
+                Fecha: formatDateStandard(document.getElementById('exp-date').value), 
                 Concepto: document.getElementById('exp-concept').value, 
                 Monto_ARS: Math.round(amountARS), 
                 Monto_Dlr: amountUSD.toFixed(2), 
                 PagadoPor: document.getElementById('exp-payer').value === 'p1' ? p1Name : p2Name, 
                 Categoria: document.getElementById('exp-category').value, 
-                DivididoPor: document.getElementById('exp-split').value 
+                DivididoPor: document.getElementById('exp-split').value,
+                oldTitle: oldConcept,
+                oldDate: oldDate
             }; 
 
             fetch(SCRIPT_URL, { 
                 method: "POST", 
                 body: JSON.stringify(expenseData) 
-            }).then(() => loadExpensesFromSheet()).catch(err => console.error(err)); 
-
-            document.getElementById('expense-form').reset(); 
+            }).then(() => {
+                loadExpensesFromSheet();
+                document.getElementById('expense-form').reset(); 
+                document.getElementById('exp-old-concept').value = "";
+                document.getElementById('exp-old-date').value = "";
+                document.getElementById('expense-form-title').innerText = "➕ Registrar Gasto";
+            }); 
         } 
 
         async function initApp() { 
