@@ -471,12 +471,12 @@
 
                 <div style="display: flex; gap: 0.5rem;" id="arrival-fields-group"> 
                     <div class="form-group" style="flex:1;"> 
-                        <label>Fecha Fin / Check-Out</label> 
+                        <label>Fecha Fin / Check-Out (Opcional)</label> 
                         <input type="date" id="ev-end-date" onchange="calculateDuration()"> 
                     </div> 
                     <div class="form-group" style="flex:1;"> 
-                        <label>Hora Fin (0-23)</label> 
-                        <input type="number" id="ev-end-hour" min="0" max="23" value="10" onchange="calculateDuration()"> 
+                        <label>Hora Fin (0-23, Opcional)</label> 
+                        <input type="number" id="ev-end-hour" min="0" max="23" placeholder="Auto" onchange="calculateDuration()"> 
                     </div> 
                 </div> 
 
@@ -490,7 +490,7 @@
                         <select id="ev-type" onchange="toggleLocationFields()"> 
                             <option value="show">Show / Recital</option> 
                             <option value="actividad">Actividad / Paseo</option> 
-                            <option value="transporte">Transporte / Colectivo / Subte</option> 
+                            <option value="transporte">Transporte / Colectivo / Subte / Vuelo</option> 
                             <option value="sleep">Alojamiento / Descanso</option> 
                         </select> 
                     </div> 
@@ -684,8 +684,10 @@
         function calculateDuration() { 
             const startDateVal = document.getElementById('ev-date').value; 
             const startHourVal = parseInt(document.getElementById('ev-hour').value) || 0; 
-            const endDateVal = document.getElementById('ev-end-date').value; 
-            const endHourVal = parseInt(document.getElementById('ev-end-hour').value) || 0; 
+            let endDateVal = document.getElementById('ev-end-date').value || startDateVal; 
+            let endHourVal = parseInt(document.getElementById('ev-end-hour').value); 
+
+            if (isNaN(endHourVal)) endHourVal = startHourVal + 2;
 
             if (startDateVal && endDateVal) { 
                 const start = new Date(`${startDateVal}T${startHourVal.toString().padStart(2, '0')}:00:00`); 
@@ -747,7 +749,7 @@
         } 
 
         function formatDateToISO(d) { 
-            if (!d) return ''; 
+            if (!d || isNaN(d.getTime())) return ''; 
             let year = d.getFullYear(); 
             let month = (d.getMonth() + 1).toString().padStart(2, '0'); 
             let day = d.getDate().toString().padStart(2, '0'); 
@@ -756,7 +758,7 @@
 
         function formatDateStandard(rawDate) {
             let d = parseDateStr(rawDate);
-            if (!d) return rawDate || '';
+            if (!d || isNaN(d.getTime())) return rawDate || '';
             let day = ("0" + d.getDate()).slice(-2);
             let month = ("0" + (d.getMonth() + 1)).slice(-2);
             let year = d.getFullYear();
@@ -765,10 +767,10 @@
 
         function autoDetectTripBounds() { 
             let allDates = []; 
-            localEvents.forEach(e => { let d = parseDateStr(e.date); if (d) allDates.push(d); }); 
+            localEvents.forEach(e => { let d = parseDateStr(e.date); if (d && !isNaN(d.getTime())) allDates.push(d); }); 
             accommodationsData.forEach(a => {  
-                let d1 = parseDateStr(a.start); if (d1) allDates.push(d1); 
-                let d2 = parseDateStr(a.end); if (d2) allDates.push(d2); 
+                let d1 = parseDateStr(a.start); if (d1 && !isNaN(d1.getTime())) allDates.push(d1); 
+                let d2 = parseDateStr(a.end); if (d2 && !isNaN(d2.getTime())) allDates.push(d2); 
             }); 
 
             if (allDates.length > 0) { 
@@ -781,7 +783,7 @@
                 START_DATE = earliest; 
 
                 let diffDays = Math.ceil((latest - earliest) / (1000 * 60 * 60 * 24)) + 1; 
-                totalWeeks = Math.max(1, Math.ceil(diffDays / 7)); 
+                totalWeeks = Math.max(1, Math.min(12, Math.ceil(diffDays / 7))); 
             } else { 
                 let today = new Date(); 
                 let dayIdx = (today.getDay() + 6) % 7; 
@@ -920,10 +922,8 @@
             } 
         } 
 
-        // POBLAR SELECTS DE UBICACIONES DINÁMICAMENTE
         function populateLocationSelects() {
             const selects = ['ev-location-select', 'ev-origin-select', 'ev-dest-select'];
-            
             let optionsHTML = `<option value="">-- Seleccionar de mis Lugares Guardados --</option>`;
             
             if (accommodationsData.length > 0) {
@@ -1158,6 +1158,16 @@
             } 
         } 
 
+        function getCleanPlaceName(rawText) {
+            if (!rawText) return 'Buenos Aires';
+            if (rawText.startsWith('http')) {
+                let match = rawText.match(/query=([^&]+)/);
+                if (match) return decodeURIComponent(match[1]);
+                return 'Buenos Aires';
+            }
+            return rawText;
+        }
+
         function showModalByObject(title, date, startHour) { 
             const ev = localEvents.find(e => e.title === title && e.date === date && e.startHour === startHour); 
             if (!ev) return; 
@@ -1169,17 +1179,20 @@
 
             let routeHTML = ''; 
             if (ev.type === 'transporte') { 
-                let orig = ev.originLink || 'Origen no especificado'; 
-                let dest = ev.destLink || 'Destino no especificado'; 
+                let origRaw = ev.originLink || 'Origen no especificado'; 
+                let destRaw = ev.destLink || 'Destino no especificado'; 
                 
-                let mapsDirUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(orig)}&destination=${encodeURIComponent(dest)}&travelmode=transit`;
+                let origClean = getCleanPlaceName(origRaw);
+                let destClean = getCleanPlaceName(destRaw);
+
+                let mapsDirUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origClean)}&destination=${encodeURIComponent(destClean)}&travelmode=transit`;
 
                 routeHTML = ` 
                     <div style="margin: 0.8rem 0; padding: 0.8rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; font-size: 0.85rem;"> 
-                        <p style="font-weight:bold; color:#1e40af; margin-bottom:4px;">🚉 Trayecto / Colectivo / Subte:</p> 
-                        <p><b>Origen:</b> ${orig}</p> 
-                        <p><b>Destino:</b> ${dest}</p> 
-                        <a href="${mapsDirUrl}" target="_blank" style="display:inline-block; margin-top:6px; background:#2563eb; color:white; padding:4px 8px; border-radius:4px; font-weight:bold; text-decoration:none; font-size:0.75rem;">
+                        <p style="font-weight:bold; color:#1e40af; margin-bottom:4px;">🚉 Trayecto / Colectivo / Subte / Vuelo:</p> 
+                        <p><b>Origen:</b> ${origClean}</p> 
+                        <p><b>Destino:</b> ${destClean}</p> 
+                        <a href="${mapsDirUrl}" target="_blank" style="display:inline-block; margin-top:6px; background:#2563eb; color:white; padding:6px 12px; border-radius:4px; font-weight:bold; text-decoration:none; font-size:0.8rem;">
                             🧭 Calcular Ruta Directa en Google Maps
                         </a>
                     </div>`; 
@@ -1275,18 +1288,26 @@
                 targetSheet = "Alojamiento"; 
             } 
 
-            const formattedStartDate = formatDateStandard(document.getElementById('ev-date').value);
-            const formattedEndDate = formatDateStandard(document.getElementById('ev-end-date').value || document.getElementById('ev-date').value);
+            let startDateVal = document.getElementById('ev-date').value;
+            let endDateVal = document.getElementById('ev-end-date').value || startDateVal;
+
+            const formattedStartDate = formatDateStandard(startDateVal);
+            const formattedEndDate = formatDateStandard(endDateVal);
+
+            let startH = parseInt(document.getElementById('ev-hour').value) || 0;
+            let durH = parseInt(document.getElementById('ev-duration').value) || 1;
+            let endHVal = document.getElementById('ev-end-hour').value;
+            let endH = (endHVal !== "") ? parseInt(endHVal) : Math.min(23, startH + durH);
 
             const newEv = { 
                 sheet: targetSheet, 
                 Titulo: document.getElementById('ev-title').value, 
                 Tipo: type,
                 FechaInicio: formattedStartDate, 
-                HoraInicio: parseInt(document.getElementById('ev-hour').value) || 0, 
+                HoraInicio: startH, 
                 FechaFin: formattedEndDate, 
-                HoraFin: parseInt(document.getElementById('ev-end-hour').value) || 0, 
-                Duracion: parseInt(document.getElementById('ev-duration').value) || 1, 
+                HoraFin: endH, 
+                Duracion: durH, 
                 CodigoReserva: document.getElementById('ev-booking-code').value, 
                 UbicacionInicio: type === 'transporte' ? document.getElementById('ev-origin-link').value : document.getElementById('ev-location').value, 
                 UbicacionFin: type === 'transporte' ? document.getElementById('ev-dest-link').value : '', 
