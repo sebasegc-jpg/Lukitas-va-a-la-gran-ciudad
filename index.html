@@ -162,8 +162,8 @@
         .form-group label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.3rem; } 
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.375rem; font-size: 0.85rem; } 
         
-        .subway-guide { background: #eff6ff; border: 1px solid #bfdbfe; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; } 
-        .subway-line { display: inline-block; padding: 2px 8px; border-radius: 4px; color: white; font-weight: bold; font-size: 0.75rem; margin-right: 4px; } 
+        .subway-guide { background: #eff6ff; border: 1px solid #bfdbfe; padding: 0.8rem; border-radius: 8px; margin-bottom: 1rem; } 
+        .subway-line { display: inline-block; padding: 2px 8px; border-radius: 4px; color: white; font-weight: bold; font-size: 0.75rem; margin-right: 4px; margin-bottom: 4px; } 
         .line-A { background: #00a0dd; } 
         .line-B { background: #e60012; } 
         .line-C { background: #00569f; } 
@@ -242,23 +242,24 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom:0.8rem;"> 
                     <div> 
                         <h3>Mapa, Subtes y Cronología en CABA</h3> 
-                        <p style="color: var(--text-muted); font-size:0.85rem;">Puntos del itinerario, alojamientos y cálculo directo de rutas.</p> 
+                        <p style="color: var(--text-muted); font-size:0.85rem;">Puntos del itinerario, alojamientos, trazado de subtes y cálculo de rutas.</p> 
                     </div> 
                     <div class="zone-filters" style="margin-bottom:0;"> 
-                        <button class="filter-btn" onclick="zoomMapTo('caba_centro')">📍 Centro / Obelisco</button> 
-                        <button class="filter-btn" onclick="zoomMapTo('palermo')">📍 Palermo / Recoleta</button> 
-                        <button class="filter-btn" onclick="zoomMapTo('belgrano')">📍 Belgrano / River</button> 
-                        <button class="filter-btn" onclick="zoomMapTo('amba_norte')">🚆 AMBA Norte</button> 
-                        <button class="filter-btn active" onclick="zoomMapTo('all')">🗺 Ver Todo</button> 
+                        <button class="filter-btn active" onclick="filterMapMarkers('all', event)">🗺️ Ver Todo</button> 
+                        <button class="filter-btn" onclick="filterMapMarkers('hotel', event)">🏨 Alojamientos</button> 
+                        <button class="filter-btn" onclick="filterMapMarkers('itinerario', event)">📅 Itinerario</button> 
+                        <button class="filter-btn" onclick="filterMapMarkers('recom', event)">💡 Recomendaciones</button> 
                     </div> 
                 </div> 
 
                 <div class="subway-guide"> 
-                    <h4 style="color:#1e40af; margin-bottom:0.4rem;"><i class="fa-solid fa-train-subway"></i> Guía Rápida de Red de Subtes</h4> 
+                    <h4 style="color:#1e40af; margin-bottom:0.4rem;"><i class="fa-solid fa-train-subway"></i> Red de Subtes Trazada en el Mapa</h4> 
                     <p style="font-size:0.8rem; color:#334155;"> 
                         <span class="subway-line line-A">Línea A</span> Plaza de Mayo ⇆ San Pedrito |  
                         <span class="subway-line line-B">Línea B</span> Leandro N. Alem ⇆ J.M. de Rosas |  
-                        <span class="subway-line line-D">Línea D</span> Catedral ⇆ Congreso de Tucumán 
+                        <span class="subway-line line-C">Línea C</span> Retiro ⇆ Constitución | 
+                        <span class="subway-line line-D">Línea D</span> Catedral ⇆ Congreso de Tucumán | 
+                        <span class="subway-line line-H">Línea H</span> Hospitales ⇆ Facultad de Derecho 
                     </p> 
                 </div> 
                 
@@ -459,22 +460,22 @@
                 
                 <div style="display: flex; gap: 0.5rem;"> 
                     <div class="form-group" style="flex:1;"> 
-                        <label>Fecha Salida / Inicio</label> 
+                        <label>Fecha Inicio / Check-In</label> 
                         <input type="date" id="ev-date" required onchange="calculateDuration()"> 
                     </div> 
                     <div class="form-group" style="flex:1;"> 
-                        <label>Hora Salida (0-23)</label> 
+                        <label>Hora Inicio (0-23)</label> 
                         <input type="number" id="ev-hour" min="0" max="23" required value="8" onchange="calculateDuration()"> 
                     </div> 
                 </div> 
 
                 <div style="display: flex; gap: 0.5rem;" id="arrival-fields-group"> 
                     <div class="form-group" style="flex:1;"> 
-                        <label>Fecha Llegada / Fin</label> 
+                        <label>Fecha Fin / Check-Out</label> 
                         <input type="date" id="ev-end-date" onchange="calculateDuration()"> 
                     </div> 
                     <div class="form-group" style="flex:1;"> 
-                        <label>Hora Llegada (0-23)</label> 
+                        <label>Hora Fin (0-23)</label> 
                         <input type="number" id="ev-end-hour" min="0" max="23" value="10" onchange="calculateDuration()"> 
                     </div> 
                 </div> 
@@ -500,19 +501,30 @@
                     <input type="text" id="ev-booking-code" placeholder="Ej: Entrada #9283 / Sector Campo"> 
                 </div> 
 
+                <!-- SELECCIÓN DINÁMICA DE LUGAR PARA EVENTOS NORMALES -->
                 <div class="form-group" id="single-location-group"> 
-                    <label>Ubicación / Dirección / Link Google Maps</label> 
-                    <input type="text" id="ev-location" placeholder="Ej: Movistar Arena / https://maps.app.goo.gl/..."> 
+                    <label>Ubicación / Dirección:</label> 
+                    <select id="ev-location-select" onchange="handleLocationSelectChange('ev-location-select', 'ev-location')" style="margin-bottom:0.4rem;">
+                        <option value="">-- Seleccionar de mis Lugares Guardados --</option>
+                    </select>
+                    <input type="text" id="ev-location" placeholder="Escribir o pegar link de Google Maps manual..."> 
                 </div> 
 
+                <!-- SELECCIÓN DINÁMICA DE ORIGEN Y DESTINO PARA TRANSPORTE -->
                 <div style="display: flex; gap: 0.5rem; flex-direction:column; display:none;" id="transport-location-group"> 
                     <div class="form-group"> 
-                        <label>Origen (Nombre o Link de Google Maps)</label> 
-                        <input type="text" id="ev-origin-link" placeholder="Ej: Obelisco"> 
+                        <label>Origen del Trayecto:</label> 
+                        <select id="ev-origin-select" onchange="handleLocationSelectChange('ev-origin-select', 'ev-origin-link')" style="margin-bottom:0.4rem;">
+                            <option value="">-- Seleccionar Origen Guardado --</option>
+                        </select>
+                        <input type="text" id="ev-origin-link" placeholder="Escribir origen o link de Google Maps manual..."> 
                     </div> 
                     <div class="form-group"> 
-                        <label>Destino (Nombre o Link de Google Maps)</label> 
-                        <input type="text" id="ev-dest-link" placeholder="Ej: Estadio River Plate"> 
+                        <label>Destino del Trayecto:</label> 
+                        <select id="ev-dest-select" onchange="handleLocationSelectChange('ev-dest-select', 'ev-dest-link')" style="margin-bottom:0.4rem;">
+                            <option value="">-- Seleccionar Destino Guardado --</option>
+                        </select>
+                        <input type="text" id="ev-dest-link" placeholder="Escribir destino o link de Google Maps manual..."> 
                     </div> 
                 </div> 
 
@@ -583,6 +595,7 @@
         let totalWeeks = 2; 
         let localEvents = []; 
         let accommodationsData = []; 
+        let recomendationsData = [];
         let rawExpenses = [];
         
         let traveler1 = localStorage.getItem('caba_lukitas_traveler1') || ''; 
@@ -591,23 +604,26 @@
         let currentModalEventObj = null; 
         let leafletMap = null; 
         let mapMarkers = []; 
+        let mapSubwayLayers = [];
         let geocodeCache = {};
 
-        const CITY_COORDS = { 
-            caba_centro: [-34.6037, -58.3816], 
-            palermo: [-34.5889, -58.4306], 
-            belgrano: [-34.5556, -58.4550], 
-            amba_norte: [-34.4714, -58.5283], 
-            all: [-34.6037, -58.4100] 
-        }; 
+        // COORDENADAS RECOLECTADAS Y RED DE SUBTES TRAZADA
+        const SUBWAY_LINES = {
+            'Línea A': { color: '#00a0dd', coords: [[-34.6086, -58.3714], [-34.6089, -58.3806], [-34.6094, -58.3926], [-34.6099, -58.4069], [-34.6186, -58.4419], [-34.6234, -58.4697]] },
+            'Línea B': { color: '#e60012', coords: [[-34.6030, -58.3701], [-34.6041, -58.3860], [-34.6046, -58.4116], [-34.5857, -58.4578], [-34.5739, -58.4792]] },
+            'Línea C': { color: '#00569f', coords: [[-34.5916, -58.3743], [-34.6017, -58.3792], [-34.6272, -58.3808]] },
+            'Línea D': { color: '#008066', coords: [[-34.6076, -58.3741], [-34.6048, -58.3831], [-34.5985, -58.3976], [-34.5878, -58.4101], [-34.5701, -58.4439], [-34.5556, -58.4550]] },
+            'Línea H': { color: '#ffd400', coords: [[-34.5836, -58.3925], [-34.6041, -58.4055], [-34.6369, -58.4058]] }
+        };
 
-        const KNOWN_PLACES_COORDS = { 
-            'obelisco': [-34.6037, -58.3816], 
-            'palermo': [-34.5889, -58.4306], 
-            'river': [-34.5453, -58.4497], 
-            'movistar arena': [-34.5939, -58.4475], 
-            'recoleta': [-34.5885, -58.3934] 
-        }; 
+        const SUBWAY_NODES = [
+            { name: "Subte D/A/Nodal Obelisco", coords: [-34.6048, -58.3831] },
+            { name: "Subte A/H Plaza Miserere", coords: [-34.6099, -58.4069] },
+            { name: "Subte D Congreso de Tucumán", coords: [-34.5556, -58.4550] },
+            { name: "Subte B Federico Lacroze", coords: [-34.5857, -58.4578] },
+            { name: "Subte C Retiro", coords: [-34.5916, -58.3743] },
+            { name: "Subte C Constitución", coords: [-34.6272, -58.3808] }
+        ];
 
         function ensureTravelerNames() { 
             if (!traveler1 || !traveler2) { 
@@ -863,6 +879,7 @@
                 const res = await fetch(`${SCRIPT_URL}?sheet=Recomendaciones`); 
                 const data = await res.json(); 
                 if (Array.isArray(data) && data.length > 0) { 
+                    recomendationsData = data;
                     container.innerHTML = data.map(item => { 
                         const title = item.Titulo || item.title || 'Recomendación'; 
                         const tipo = item.Tipo || 'Recomendación';
@@ -872,7 +889,7 @@
                         const formattedBody = formatMarkdown(rawDetails); 
                         
                         const safeTitle = title.replace(/'/g, "\\'");
-                        const safeLoc = ubicacion.replace(/'/g, "\\'");
+                        const safeLoc = (item.LinkGoogleMaps || ubicacion).replace(/'/g, "\\'");
                         const safeDet = rawDetails.replace(/'/g, "\\'").replace(/\n/g, ' ');
 
                         let mapsBtn = mapsUrl ? `<a href="${mapsUrl}" target="_blank" style="color:var(--primary); font-weight:bold; margin-right:10px;">🗺️ Abrir en Maps</a>` : '';
@@ -902,6 +919,58 @@
                 container.innerHTML = `<p style="color:var(--text-muted);">Error al cargar recomendaciones.</p>`; 
             } 
         } 
+
+        // POBLAR SELECTS DE UBICACIONES DINÁMICAMENTE
+        function populateLocationSelects() {
+            const selects = ['ev-location-select', 'ev-origin-select', 'ev-dest-select'];
+            
+            let optionsHTML = `<option value="">-- Seleccionar de mis Lugares Guardados --</option>`;
+            
+            if (accommodationsData.length > 0) {
+                optionsHTML += `<optgroup label="🏨 Alojamientos">`;
+                accommodationsData.forEach(a => {
+                    let val = a.mapUrl || a.name;
+                    optionsHTML += `<option value="${val}">🏨 ${a.name}</option>`;
+                });
+                optionsHTML += `</optgroup>`;
+            }
+
+            if (localEvents.length > 0) {
+                optionsHTML += `<optgroup label="📅 Eventos / Lugares">`;
+                let added = new Set();
+                localEvents.forEach(e => {
+                    let loc = e.location || e.title;
+                    if (loc && !added.has(loc)) {
+                        added.add(loc);
+                        optionsHTML += `<option value="${loc}">📍 ${e.title}</option>`;
+                    }
+                });
+                optionsHTML += `</optgroup>`;
+            }
+
+            if (recomendationsData.length > 0) {
+                optionsHTML += `<optgroup label="💡 Recomendaciones Guardadas">`;
+                recomendationsData.forEach(r => {
+                    let title = r.Titulo || r.title;
+                    let val = r.LinkGoogleMaps || r.Ubicacion || title;
+                    optionsHTML += `<option value="${val}">💡 ${title}</option>`;
+                });
+                optionsHTML += `</optgroup>`;
+            }
+
+            selects.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = optionsHTML;
+            });
+        }
+
+        function handleLocationSelectChange(selectId, inputId) {
+            const sel = document.getElementById(selectId);
+            const inp = document.getElementById(inputId);
+            if (sel && inp && sel.value) {
+                inp.value = sel.value;
+            }
+        }
 
         function openAddRecomModal() {
             document.getElementById('recomModal').style.display = 'flex';
@@ -1103,18 +1172,20 @@
                 let orig = ev.originLink || 'Origen no especificado'; 
                 let dest = ev.destLink || 'Destino no especificado'; 
                 
-                let origLink = orig.startsWith('http') ? `<a href="${orig}" target="_blank" style="color:#1d4ed8; text-decoration:underline;">📍 Abrir Origen en Maps</a>` : orig; 
-                let destLink = dest.startsWith('http') ? `<a href="${dest}" target="_blank" style="color:#1d4ed8; text-decoration:underline;">📍 Abrir Destino en Maps</a>` : dest; 
+                let mapsDirUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(orig)}&destination=${encodeURIComponent(dest)}&travelmode=transit`;
 
                 routeHTML = ` 
                     <div style="margin: 0.8rem 0; padding: 0.8rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; font-size: 0.85rem;"> 
                         <p style="font-weight:bold; color:#1e40af; margin-bottom:4px;">🚉 Trayecto / Colectivo / Subte:</p> 
-                        <p><b>Origen:</b> ${origLink}</p> 
-                        <p><b>Destino:</b> ${destLink}</p> 
+                        <p><b>Origen:</b> ${orig}</p> 
+                        <p><b>Destino:</b> ${dest}</p> 
+                        <a href="${mapsDirUrl}" target="_blank" style="display:inline-block; margin-top:6px; background:#2563eb; color:white; padding:4px 8px; border-radius:4px; font-weight:bold; text-decoration:none; font-size:0.75rem;">
+                            🧭 Calcular Ruta Directa en Google Maps
+                        </a>
                     </div>`; 
             } else { 
                 let loc = ev.location || ev.title; 
-                let locLink = loc.startsWith('http') ? `<a href="${loc}" target="_blank" style="color:#1d4ed8; text-decoration:underline;">📍 Abrir en Google Maps</a>` : loc; 
+                let locLink = loc.startsWith('http') ? `<a href="${loc}" target="_blank" style="color:#1d4ed8; text-decoration:underline;">📍 Abrir en Google Maps</a>` : `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}" target="_blank" style="color:#1d4ed8; text-decoration:underline;">📍 ${loc}</a>`; 
                 routeHTML = `<p><b>Ubicación:</b> ${locLink}</p>`; 
             } 
 
@@ -1146,6 +1217,7 @@
         } 
 
         function openAddModal() {  
+            populateLocationSelects();
             document.getElementById('modalFormHeaderTitle').innerText = "Añadir Nueva Actividad"; 
             document.getElementById('addEventForm').reset(); 
             document.getElementById('ev-old-title').value = ""; 
@@ -1158,6 +1230,7 @@
             if (!currentModalEventObj) return; 
             const ev = currentModalEventObj; 
             
+            populateLocationSelects();
             closeModal('eventModal'); 
             document.getElementById('modalFormHeaderTitle').innerText = "Editar Actividad / Evento"; 
             
@@ -1334,7 +1407,7 @@
 
             container.innerHTML = combined.map(item => { 
                 let icon = item.type === 'transporte' ? '🚌' : (item.type === 'show' ? '🎸' : (item.type === 'hotel' ? '🏨' : '📍')); 
-                let mapsBtn = item.link.startsWith('http') ? `<a href="${item.link}" target="_blank" style="color:var(--primary); font-weight:bold; font-size:0.75rem;">🗺 Maps</a>` : ''; 
+                let mapsBtn = item.link.startsWith('http') ? `<a href="${item.link}" target="_blank" style="color:var(--primary); font-weight:bold; font-size:0.75rem;">🗺 Maps</a>` : `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.link)}" target="_blank" style="color:var(--primary); font-weight:bold; font-size:0.75rem;">🗺 Maps</a>`; 
 
                 return ` 
                     <div class="timeline-item"> 
@@ -1349,26 +1422,35 @@
         function initLeafletMap() { 
             if (leafletMap) return; 
 
-            leafletMap = L.map('leaflet-map').setView(CITY_COORDS.all, 11); 
+            leafletMap = L.map('leaflet-map').setView([-34.6037, -58.4100], 12); 
 
             L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { 
                 maxZoom: 19, 
                 attribution: 'Tiles &copy; Esri' 
             }).addTo(leafletMap); 
 
+            // DIBUJAR LÍNEAS DE SUBTE
+            for (let lineKey in SUBWAY_LINES) {
+                let line = SUBWAY_LINES[lineKey];
+                let poly = L.polyline(line.coords, { color: line.color, weight: 4, opacity: 0.8 }).addTo(leafletMap);
+                poly.bindPopup(`<b>${lineKey}</b>`);
+                mapSubwayLayers.push(poly);
+            }
+
+            // MARCADORES NODALES DE SUBTE
+            SUBWAY_NODES.forEach(node => {
+                let nodeMarker = L.circleMarker(node.coords, { radius: 5, fillColor: "#1e293b", color: "#ffffff", weight: 2, fillOpacity: 0.9 }).addTo(leafletMap);
+                nodeMarker.bindPopup(`<b>🚇 Estación / Nodo Subte:</b> ${node.name}`);
+                mapSubwayLayers.push(nodeMarker);
+            });
+
             renderMapMarkers(); 
         } 
 
         async function geocodeLocation(query) { 
+            if (!query) return null;
             const cleanQuery = query.toLowerCase().trim(); 
             if (geocodeCache[cleanQuery]) return geocodeCache[cleanQuery]; 
-
-            for (let known in KNOWN_PLACES_COORDS) { 
-                if (cleanQuery.includes(known)) { 
-                    geocodeCache[cleanQuery] = KNOWN_PLACES_COORDS[known]; 
-                    return KNOWN_PLACES_COORDS[known]; 
-                } 
-            } 
 
             try { 
                 const searchAddress = `${query}, Buenos Aires, Argentina`; 
@@ -1385,61 +1467,92 @@
             return null; 
         } 
 
-        async function renderMapMarkers() { 
+        async function renderMapMarkers(categoryFilter = 'all') { 
             if (!leafletMap) return; 
 
             mapMarkers.forEach(m => leafletMap.removeLayer(m)); 
             mapMarkers = []; 
 
-            for (const acc of accommodationsData) { 
-                const coords = await geocodeLocation(acc.name); 
-                if (coords) { 
-                    const mapSearchUrl = acc.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(acc.name)}`; 
-                    const marker = L.marker(coords).addTo(leafletMap); 
-                    
-                    marker.bindPopup(` 
-                        <div style="font-family:Inter, sans-serif;"> 
-                            <h4 style="margin:0 0 4px 0; color:#1e40af;">🏨 ${acc.name}</h4> 
-                            <p style="font-size:0.8rem; color:#475569; margin-bottom:8px;">Alojamiento (${acc.start} - ${acc.end})</p> 
-                            <a href="${mapSearchUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block; background:#2563eb; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:0.75rem; font-weight:bold;"> 
-                                🧭 Abrir en Google Maps 
-                            </a> 
-                        </div> 
-                    `); 
-                    mapMarkers.push(marker); 
+            // 1. ALOJAMIENTOS
+            if (categoryFilter === 'all' || categoryFilter === 'hotel') {
+                for (const acc of accommodationsData) { 
+                    const coords = await geocodeLocation(acc.name); 
+                    if (coords) { 
+                        const mapSearchUrl = acc.mapUrl.startsWith('http') ? acc.mapUrl : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(acc.name)}`; 
+                        const marker = L.marker(coords).addTo(leafletMap); 
+                        
+                        marker.bindPopup(` 
+                            <div style="font-family:Inter, sans-serif;"> 
+                                <h4 style="margin:0 0 4px 0; color:#1e40af;">🏨 ${acc.name}</h4> 
+                                <p style="font-size:0.8rem; color:#475569; margin-bottom:8px;">Alojamiento (${acc.start} - ${acc.end})</p> 
+                                <a href="${mapSearchUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block; background:#2563eb; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:0.75rem; font-weight:bold;"> 
+                                    🧭 Abrir en Google Maps 
+                                </a> 
+                            </div> 
+                        `); 
+                        mapMarkers.push(marker); 
+                    } 
                 } 
-            } 
+            }
 
-            for (const ev of localEvents) { 
-                if (ev.type === 'sleep') continue; 
-                
-                const query = ev.location || ev.title; 
-                if (!query || query.startsWith('http')) continue; 
-
-                const coords = await geocodeLocation(query); 
-                if (coords) { 
-                    const icon = ev.type === 'show' ? '🎸' : (ev.type === 'transporte' ? '🚌' : '📍'); 
-                    const marker = L.marker(coords).addTo(leafletMap); 
+            // 2. ITINERARIO
+            if (categoryFilter === 'all' || categoryFilter === 'itinerario') {
+                for (const ev of localEvents) { 
+                    if (ev.type === 'sleep') continue; 
                     
-                    marker.bindPopup(` 
-                        <div style="font-family:Inter, sans-serif;"> 
-                            <h4 style="margin:0 0 4px 0; color:#1e293b;">${icon} ${ev.title}</h4> 
-                            <p style="font-size:0.8rem; color:#475569; margin-bottom:8px;">${ev.date} (${ev.startHour !== null ? ev.startHour + ':00hs' : 'Pendiente'})</p> 
-                            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}" target="_blank" style="display:inline-block; background:#2563eb; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:0.75rem; font-weight:bold;"> 
-                                🧭 Abrir en Google Maps 
-                            </a> 
-                        </div> 
-                    `); 
-                    mapMarkers.push(marker); 
+                    const query = ev.location || ev.title; 
+                    if (!query || query.startsWith('http')) continue; 
+
+                    const coords = await geocodeLocation(query); 
+                    if (coords) { 
+                        const icon = ev.type === 'show' ? '🎸' : (ev.type === 'transporte' ? '🚌' : '📍'); 
+                        const marker = L.marker(coords).addTo(leafletMap); 
+                        
+                        marker.bindPopup(` 
+                            <div style="font-family:Inter, sans-serif;"> 
+                                <h4 style="margin:0 0 4px 0; color:#1e293b;">${icon} ${ev.title}</h4> 
+                                <p style="font-size:0.8rem; color:#475569; margin-bottom:8px;">${ev.date} (${ev.startHour !== null ? ev.startHour + ':00hs' : 'Pendiente'})</p> 
+                                <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}" target="_blank" style="display:inline-block; background:#2563eb; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:0.75rem; font-weight:bold;"> 
+                                    🧭 Abrir en Google Maps 
+                                </a> 
+                            </div> 
+                        `); 
+                        mapMarkers.push(marker); 
+                    } 
                 } 
-            } 
+            }
+
+            // 3. RECOMENDACIONES
+            if (categoryFilter === 'all' || categoryFilter === 'recom') {
+                for (const rec of recomendationsData) {
+                    const query = rec.Ubicacion || rec.Titulo || rec.title;
+                    if (!query) continue;
+
+                    const coords = await geocodeLocation(query);
+                    if (coords) {
+                        const marker = L.marker(coords).addTo(leafletMap);
+                        const mapsUrl = rec.LinkGoogleMaps || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+
+                        marker.bindPopup(`
+                            <div style="font-family:Inter, sans-serif;"> 
+                                <h4 style="margin:0 0 4px 0; color:#0284c7;">💡 ${rec.Titulo || rec.title}</h4> 
+                                <p style="font-size:0.8rem; color:#475569; margin-bottom:8px;">${rec.Tipo || 'Recomendación'}</p> 
+                                <a href="${mapsUrl}" target="_blank" style="display:inline-block; background:#0284c7; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:0.75rem; font-weight:bold;"> 
+                                    🧭 Abrir en Google Maps 
+                                </a> 
+                            </div> 
+                        `);
+                        mapMarkers.push(marker);
+                    }
+                }
+            }
         } 
 
-        function zoomMapTo(cityKey) { 
+        function filterMapMarkers(cat, evt) { 
             if (!leafletMap) initLeafletMap(); 
-            const coords = CITY_COORDS[cityKey] || CITY_COORDS.all; 
-            const zoom = (cityKey === 'all') ? 11 : 14; 
-            leafletMap.setView(coords, zoom); 
+            document.querySelectorAll('.zone-filters .filter-btn').forEach(btn => btn.classList.remove('active'));
+            if (evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+            renderMapMarkers(cat);
         } 
 
         function updateTravelerLabels() { 
@@ -1629,6 +1742,7 @@
             fetchLiveExchangeRate(); 
             await loadAccommodationsFromSheet(); 
             await loadEventsFromSheet(); 
+            await loadRecomendacionesFromSheet();
             
             autoDetectTripBounds(); 
             renderHeaderDays(); 
