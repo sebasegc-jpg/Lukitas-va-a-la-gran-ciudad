@@ -38,7 +38,7 @@
 
         @media (min-width: 1024px) { 
             body { 
-                background-size: 700px 100vh, 700px 100vh; 
+                background-size: 650px 100vh, 650px 100vh; 
                 background-repeat: no-repeat, no-repeat; 
                 background-position: left top, right top; 
                 background-attachment: fixed, fixed; 
@@ -48,7 +48,6 @@
             body:has(#gastos.active) { background-image: url('gastos.png'), url('gastos.png'); } 
 
             .tab-banner { display: none !important; } 
-            /* AMPLIADO PARA MOSTRAR LOS 7 DÍAS EN EN ESCRITORIO */
             main { max-width: 1250px !important; padding: 0 1rem !important; } 
         } 
 
@@ -588,7 +587,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script> 
 
     <script> 
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwhI2LqfUH3dVQ3CvfGoBTGQCN49HcUSzhMllCdqwcNZdcHh_JasQG4MgD-G0ewueuHKA/exec"; 
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw8Mg5e-3CSQmOt2EOxcQgSptrJLVDW8vsAbUGduS6qzmBrp8rWEMqePpImi0lWe7ET/exec"; 
         let ARS_USD_RATE = 1250;  
 
         let START_DATE = null; 
@@ -608,7 +607,7 @@
         let mapSubwayLayers = [];
         let geocodeCache = {};
 
-        // COORDENADAS RECOLECTADAS Y RED DE SUBTES TRAZADA
+        // RED DE SUBTES TRAZADA
         const SUBWAY_LINES = {
             'Línea A': { color: '#00a0dd', coords: [[-34.6086, -58.3714], [-34.6089, -58.3806], [-34.6094, -58.3926], [-34.6099, -58.4069], [-34.6186, -58.4419], [-34.6234, -58.4697]] },
             'Línea B': { color: '#e60012', coords: [[-34.6030, -58.3701], [-34.6041, -58.3860], [-34.6046, -58.4116], [-34.5857, -58.4578], [-34.5739, -58.4792]] },
@@ -736,7 +735,6 @@
             buildGrid(localEvents); 
         } 
 
-        // PARSEADOR MEJORADO QUE NUNCA INVIERTE DÍAS/AÑOS
         function parseDateStr(rawDate) { 
             if (!rawDate) return null; 
             let clean = String(rawDate).split('T')[0].split(' ')[0].replace(/^"|"$/g, '').trim(); 
@@ -839,7 +837,8 @@
                         const start = r.FechaInicio || r.CheckIn || ''; 
                         const end = r.FechaFin || r.CheckOut || ''; 
                         const mapUrl = r.Direccion || r.LinkReserva || ''; 
-                        return { name, start, end, mapUrl }; 
+                        const coords = r.Coords || '';
+                        return { name, start, end, mapUrl, coords }; 
                     }).filter(a => a.name !== ''); 
                 } 
             } catch (e) { 
@@ -861,6 +860,8 @@
                         const durationHours = parseInt(row.Duracion) || 1; 
                         const type = row.Tipo || 'actividad'; 
                         const location = row.UbicacionInicio || row.Ubicacion || ''; 
+                        const coordsInicio = row.CoordsInicio || '';
+                        const coordsFin = row.CoordsFin || '';
                         const cost = row.Costo || ''; 
                         const details = row.Detalles || ''; 
                         const bookingCode = row.CodigoReserva || ''; 
@@ -869,7 +870,7 @@
                         const endDate = row.FechaFin || date; 
                         const endHour = row.HoraFin !== undefined && row.HoraFin !== "" ? parseInt(row.HoraFin) : (startHour !== null ? startHour : 0); 
 
-                        return { title, date, startHour, durationHours, type, location, cost, details, bookingCode, originLink, destLink, endDate, endHour }; 
+                        return { title, date, startHour, durationHours, type, location, coordsInicio, coordsFin, cost, details, bookingCode, originLink, destLink, endDate, endHour }; 
                     }).filter(e => e.title !== ''); 
                 } 
             } catch (error) { 
@@ -877,11 +878,10 @@
             } 
         } 
 
-        // OBTENER HOTEL/ALOJAMIENTO ACTIVO PARA UNA FECHA DADA
         function getHotelForDate(dateStr) {
             if (!accommodationsData || accommodationsData.length === 0) return null;
             let targetObj = parseDateStr(dateStr);
-            if (!targetObj) return accommodationsData[0]; // fallback al primero guardado
+            if (!targetObj) return accommodationsData[0];
 
             let found = accommodationsData.find(a => {
                 let sObj = parseDateStr(a.start);
@@ -896,15 +896,12 @@
             return found || accommodationsData[0];
         }
 
-        // GENERAR ENLACE DE NAVEGACIÓN DESDE EL HOTEL HASTA EL DESTINO
-        function getHotelRouteUrl(destAddress, targetDateStr) {
+        // GENERADOR DE RUTA HOTEL ➔ DESTINO CON COORDENADAS LIMPIAS
+        function getHotelRouteUrl(destAddressOrCoords, targetDateStr) {
             let hotel = getHotelForDate(targetDateStr);
-            if (!hotel) {
-                return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destAddress)}`;
-            }
-            let originClean = getCleanPlaceName(hotel.mapUrl || hotel.name);
-            let destClean = getCleanPlaceName(destAddress);
-            return `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(originClean)}&destination=${encodeURIComponent(destClean)}&travelmode=transit`;
+            let origin = (hotel && hotel.coords) ? hotel.coords : (hotel ? (hotel.mapUrl || hotel.name) : 'Buenos Aires');
+            let destination = destAddressOrCoords || 'Buenos Aires';
+            return `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&travelmode=transit`;
         }
 
         async function loadRecomendacionesFromSheet() { 
@@ -918,18 +915,21 @@
                         const title = item.Titulo || item.title || 'Recomendación'; 
                         const tipo = item.Tipo || 'Recomendación'; 
                         const ubicacion = item.Ubicacion || ''; 
-                        const mapsUrl = item.LinkGoogleMaps || (ubicacion ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ubicacion)}` : ''); 
-                        const routeFromHotelUrl = getHotelRouteUrl(item.LinkGoogleMaps || ubicacion, item.FechaTentativa || '');
+                        const coords = item.Coords || '';
+                        
+                        const targetLoc = coords || item.LinkGoogleMaps || ubicacion;
+                        const mapsUrl = coords ? `https://www.google.com/maps/search/?api=1&query=${coords}` : (item.LinkGoogleMaps || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ubicacion)}`); 
+                        const routeFromHotelUrl = getHotelRouteUrl(targetLoc, item.FechaTentativa || '');
                         
                         const rawDetails = item.Detalles || ''; 
                         const formattedBody = formatMarkdown(rawDetails); 
                         
                         const safeTitle = title.replace(/'/g, "\\'"); 
-                        const safeLoc = (item.LinkGoogleMaps || ubicacion).replace(/'/g, "\\'"); 
+                        const safeLoc = targetLoc.replace(/'/g, "\\'"); 
                         const safeDet = rawDetails.replace(/'/g, "\\'").replace(/\n/g, ' '); 
 
                         let mapsBtn = mapsUrl ? `<a href="${mapsUrl}" target="_blank" style="color:var(--primary); font-weight:bold; margin-right:10px;">🗺️ Ver en Maps</a>` : ''; 
-                        let hotelRouteBtn = (ubicacion || item.LinkGoogleMaps) ? `<a href="${routeFromHotelUrl}" target="_blank" style="background:#0284c7; color:white; padding:4px 8px; border-radius:4px; font-weight:bold; text-decoration:none; margin-right:10px;">🚗 Ruta desde Hotel</a>` : '';
+                        let hotelRouteBtn = targetLoc ? `<a href="${routeFromHotelUrl}" target="_blank" style="background:#0284c7; color:white; padding:4px 8px; border-radius:4px; font-weight:bold; text-decoration:none; margin-right:10px;">🚗 Ruta desde Hotel</a>` : '';
 
                         return ` 
                             <details class="compact-item"> 
@@ -965,7 +965,7 @@
             if (accommodationsData.length > 0) {
                 optionsHTML += `<optgroup label="🏨 Alojamientos">`;
                 accommodationsData.forEach(a => {
-                    let val = a.mapUrl || a.name;
+                    let val = a.coords || a.mapUrl || a.name;
                     optionsHTML += `<option value="${val}">🏨 ${a.name}</option>`;
                 });
                 optionsHTML += `</optgroup>`;
@@ -975,7 +975,7 @@
                 optionsHTML += `<optgroup label="📅 Eventos / Lugares">`;
                 let added = new Set();
                 localEvents.forEach(e => {
-                    let loc = e.location || e.title;
+                    let loc = e.coordsInicio || e.location || e.title;
                     if (loc && !added.has(loc)) {
                         added.add(loc);
                         optionsHTML += `<option value="${loc}">📍 ${e.title}</option>`;
@@ -988,7 +988,7 @@
                 optionsHTML += `<optgroup label="💡 Recomendaciones Guardadas">`;
                 recomendationsData.forEach(r => {
                     let title = r.Titulo || r.title;
-                    let val = r.LinkGoogleMaps || r.Ubicacion || title;
+                    let val = r.Coords || r.LinkGoogleMaps || r.Ubicacion || title;
                     optionsHTML += `<option value="${val}">💡 ${title}</option>`;
                 });
                 optionsHTML += `</optgroup>`;
@@ -1156,7 +1156,7 @@
                         const rawDuration = parseInt(evStart.durationHours) || 1; 
                         let visualSpan = Math.min(rawDuration, 24 - hour); 
 
-                        let locText = evStart.type === 'transporte' ? `${evStart.originLink || ''} ➔ ${evStart.destLink || ''}` : (evStart.location || ''); 
+                        let locText = evStart.type === 'transporte' ? 'Traslado / Vuelo' : (evStart.location || ''); 
                         let safeTitle = evStart.title.replace(/'/g, "\\'"); 
                         let icon = evStart.type === 'transporte' ? '🚌' : (evStart.type === 'show' ? '🎸' : (evStart.type === 'sleep' ? '🏨' : '📍')); 
 
@@ -1180,12 +1180,13 @@
         function showModalByTitle(title) { 
             let acc = accommodationsData.find(a => a.name === title); 
             if (acc) { 
+                let mapsUrl = acc.coords ? `https://www.google.com/maps/search/?api=1&query=${acc.coords}` : (acc.mapUrl || 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(acc.name));
                 document.getElementById('modalTitle').innerText = acc.name; 
                 document.getElementById('modalBody').innerHTML = ` 
                     <p><b>Ubicación:</b> ${acc.name}</p> 
                     <p><b>Estadía:</b> ${acc.start} hasta ${acc.end}</p> 
                     <div style="margin-top:1rem;"> 
-                        <a href="${acc.mapUrl || 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(acc.name)}" target="_blank" style="color:var(--primary); font-weight:bold; text-decoration:underline;"> 
+                        <a href="${mapsUrl}" target="_blank" style="color:var(--primary); font-weight:bold; text-decoration:underline;"> 
                             🗺️ Abrir ubicación en Google Maps 
                         </a> 
                     </div> 
@@ -1193,16 +1194,6 @@
                 document.getElementById('eventModal').style.display = 'flex'; 
             } 
         } 
-
-        function getCleanPlaceName(rawText) {
-            if (!rawText) return 'Buenos Aires';
-            if (rawText.startsWith('http')) {
-                let match = rawText.match(/query=([^&]+)/);
-                if (match) return decodeURIComponent(match[1]);
-                return 'Buenos Aires';
-            }
-            return rawText;
-        }
 
         function showModalByObject(title, date, startHour) { 
             const ev = localEvents.find(e => e.title === title && e.date === date && e.startHour === startHour); 
@@ -1215,26 +1206,23 @@
 
             let routeHTML = ''; 
             if (ev.type === 'transporte') { 
-                let origRaw = ev.originLink || 'Origen no especificado'; 
-                let destRaw = ev.destLink || 'Destino no especificado'; 
-                
-                let origClean = getCleanPlaceName(origRaw);
-                let destClean = getCleanPlaceName(destRaw);
+                let origCoords = ev.coordsInicio || ev.originLink;
+                let destCoords = ev.coordsFin || ev.destLink;
 
-                let mapsDirUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origClean)}&destination=${encodeURIComponent(destClean)}&travelmode=transit`;
+                let origBtn = origCoords ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(origCoords)}" target="_blank" style="display:inline-block; background:#2563eb; color:white; padding:4px 8px; border-radius:4px; font-weight:bold; text-decoration:none; font-size:0.75rem;">📍 Punto de Partida</a>` : '';
+                let destBtn = destCoords ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destCoords)}" target="_blank" style="display:inline-block; background:#0284c7; color:white; padding:4px 8px; border-radius:4px; font-weight:bold; text-decoration:none; font-size:0.75rem; margin-left:6px;">📍 Punto de Arribo</a>` : '';
 
                 routeHTML = ` 
                     <div style="margin: 0.8rem 0; padding: 0.8rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; font-size: 0.85rem;"> 
-                        <p style="font-weight:bold; color:#1e40af; margin-bottom:4px;">🚉 Trayecto / Colectivo / Subte / Vuelo:</p> 
-                        <p><b>Origen:</b> ${origClean}</p> 
-                        <p><b>Destino:</b> ${destClean}</p> 
-                        <a href="${mapsDirUrl}" target="_blank" style="display:inline-block; margin-top:6px; background:#2563eb; color:white; padding:6px 12px; border-radius:4px; font-weight:bold; text-decoration:none; font-size:0.8rem;">
-                            🧭 Calcular Ruta Directa en Google Maps
-                        </a>
+                        <p style="font-weight:bold; color:#1e40af; margin-bottom:6px;">🚉 Terminales y Puntos de Encuentro:</p> 
+                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                            ${origBtn}
+                            ${destBtn}
+                        </div>
                     </div>`; 
             } else { 
-                let loc = ev.location || ev.title; 
-                let locLink = loc.startsWith('http') ? `<a href="${loc}" target="_blank" style="color:#1d4ed8; text-decoration:underline;">📍 Abrir en Google Maps</a>` : `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}" target="_blank" style="color:#1d4ed8; text-decoration:underline;">📍 ${loc}</a>`; 
+                let loc = ev.coordsInicio || ev.location || ev.title; 
+                let locLink = `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}" target="_blank" style="color:#1d4ed8; text-decoration:underline;">📍 Abrir Ubicación</a>`; 
                 
                 let routeFromHotelUrl = getHotelRouteUrl(loc, ev.date);
                 let hotelRouteBtn = `<a href="${routeFromHotelUrl}" target="_blank" style="display:inline-block; margin-left:8px; background:#0284c7; color:white; padding:4px 8px; border-radius:4px; font-weight:bold; text-decoration:none; font-size:0.75rem;">🚗 Ruta desde Hotel</a>`;
@@ -1441,13 +1429,16 @@
             accommodationsData.forEach(a => { 
                 let dObj = parseDateStr(a.start); 
                 let timeSort = dObj ? dObj.getTime() : 0;
+                let targetLoc = a.coords || a.mapUrl || a.name;
+                let link = a.coords ? `https://www.google.com/maps/search/?api=1&query=${a.coords}` : (a.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a.name)}`);
+                
                 combined.push({ 
                     type: 'hotel', 
                     title: a.name, 
                     dateStr: formatDateStandard(a.start), 
                     sortValue: timeSort, 
                     details: `Hotel verificado hasta ${formatDateStandard(a.end)}`, 
-                    link: a.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a.name)}` 
+                    link: link 
                 }); 
             }); 
 
@@ -1456,7 +1447,8 @@
                 let hourOffset = (e.startHour !== null ? parseInt(e.startHour) : 0) * 3600000;
                 let timeSort = dObj ? (dObj.getTime() + hourOffset) : 0;
 
-                let link = e.location || e.originLink || e.destLink || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.title)}`; 
+                let targetLoc = e.coordsInicio || e.location || e.originLink || e.destLink || e.title;
+                let link = e.coordsInicio ? `https://www.google.com/maps/search/?api=1&query=${e.coordsInicio}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(targetLoc)}`; 
                 let timeStr = e.startHour !== null ? `${e.startHour}:00 hs` : 'Hora pendiente'; 
                 
                 combined.push({ 
@@ -1473,7 +1465,7 @@
 
             container.innerHTML = combined.map(item => { 
                 let icon = item.type === 'transporte' ? '✈️' : (item.type === 'show' ? '🎸' : (item.type === 'hotel' ? '🏨' : '📍')); 
-                let mapsBtn = item.link.startsWith('http') ? `<a href="${item.link}" target="_blank" style="color:var(--primary); font-weight:bold; font-size:0.75rem;">🗺 Abrir Maps</a>` : `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.link)}" target="_blank" style="color:var(--primary); font-weight:bold; font-size:0.75rem;">🗺 Abrir Maps</a>`; 
+                let mapsBtn = `<a href="${item.link}" target="_blank" style="color:var(--primary); font-weight:bold; font-size:0.75rem;">🗺 Abrir en Maps</a>`; 
 
                 return ` 
                     <div class="timeline-item"> 
@@ -1513,28 +1505,38 @@
             renderMapMarkers(); 
         } 
 
-        async function geocodeLocation(query) { 
-            if (!query) return null;
-            let cleanQuery = String(query).replace(/^https?:\/\/.*$/g, '').replace(/query=([^&]+).*/g, '$1').trim(); 
-            if (!cleanQuery) return null;
+        // PARSER DE COORDENADAS O GEOCODIFICADOR DIRECTO
+        async function parseOrGeocodeCoords(textOrCoords) {
+            if (!textOrCoords) return null;
+            let str = String(textOrCoords).trim();
 
-            const cacheKey = cleanQuery.toLowerCase();
-            if (geocodeCache[cacheKey]) return geocodeCache[cacheKey]; 
+            // 1. Si son coordenadas lat,lng directas extraídas por Apps Script
+            let directMatch = str.match(/^(-?\d+\.\d+),\s*(-?\d+\.\d+)$/);
+            if (directMatch) {
+                return [parseFloat(directMatch[1]), parseFloat(directMatch[2])];
+            }
 
-            try { 
-                const searchAddress = `${cleanQuery}, Buenos Aires, Argentina`; 
-                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchAddress)}&limit=1`); 
-                const data = await res.json(); 
-                if (data && data.length > 0) { 
-                    const coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)]; 
-                    geocodeCache[cacheKey] = coords; 
-                    return coords; 
-                } 
-            } catch (e) { 
-                console.warn("Geocodificación no disponible para:", cleanQuery); 
-            } 
-            return null; 
-        } 
+            // 2. Cache
+            const cacheKey = str.toLowerCase();
+            if (geocodeCache[cacheKey]) return geocodeCache[cacheKey];
+
+            // 3. Petición a Nominatim solo si es texto de dirección
+            if (!str.startsWith('http')) {
+                try {
+                    const searchAddress = `${str}, Buenos Aires, Argentina`;
+                    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchAddress)}&limit=1`);
+                    const data = await res.json();
+                    if (data && data.length > 0) {
+                        const coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+                        geocodeCache[cacheKey] = coords;
+                        return coords;
+                    }
+                } catch (e) {
+                    console.warn("Geocodificación fallida para:", str);
+                }
+            }
+            return null;
+        }
 
         async function renderMapMarkers(categoryFilter = 'all') { 
             if (!leafletMap) return; 
@@ -1545,10 +1547,9 @@
             // 1. ALOJAMIENTOS
             if (categoryFilter === 'all' || categoryFilter === 'hotel') {
                 for (const acc of accommodationsData) { 
-                    const query = getCleanPlaceName(acc.mapUrl || acc.name);
-                    const coords = await geocodeLocation(query); 
+                    const coords = await parseOrGeocodeCoords(acc.coords || acc.name); 
                     if (coords) { 
-                        const mapSearchUrl = acc.mapUrl.startsWith('http') ? acc.mapUrl : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(acc.name)}`; 
+                        const mapSearchUrl = acc.coords ? `https://www.google.com/maps/search/?api=1&query=${acc.coords}` : (acc.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(acc.name)}`); 
                         const marker = L.marker(coords).addTo(leafletMap); 
                         
                         marker.bindPopup(` 
@@ -1570,21 +1571,19 @@
                 for (const ev of localEvents) { 
                     if (ev.type === 'sleep') continue; 
                     
-                    const query = getCleanPlaceName(ev.location || ev.title); 
-                    if (!query) continue; 
-
-                    const coords = await geocodeLocation(query); 
+                    const targetLoc = ev.coordsInicio || ev.location || ev.title; 
+                    const coords = await parseOrGeocodeCoords(targetLoc); 
                     if (coords) { 
                         const icon = ev.type === 'show' ? '🎸' : (ev.type === 'transporte' ? '🚌' : '📍'); 
                         const marker = L.marker(coords).addTo(leafletMap); 
-                        const routeFromHotelUrl = getHotelRouteUrl(query, ev.date);
+                        const routeFromHotelUrl = getHotelRouteUrl(targetLoc, ev.date);
                         
                         marker.bindPopup(` 
                             <div style="font-family:Inter, sans-serif;"> 
                                 <h4 style="margin:0 0 4px 0; color:#1e293b;">${icon} ${ev.title}</h4> 
                                 <p style="font-size:0.8rem; color:#475569; margin-bottom:8px;">${ev.date} (${ev.startHour !== null ? ev.startHour + ':00hs' : 'Pendiente'})</p> 
                                 <div style="display:flex; gap:4px; flex-wrap:wrap;">
-                                    <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}" target="_blank" style="display:inline-block; background:#2563eb; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:0.75rem; font-weight:bold;"> 
+                                    <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(targetLoc)}" target="_blank" style="display:inline-block; background:#2563eb; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:0.75rem; font-weight:bold;"> 
                                         🧭 Abrir en Maps 
                                     </a> 
                                     <a href="${routeFromHotelUrl}" target="_blank" style="display:inline-block; background:#0284c7; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:0.75rem; font-weight:bold;"> 
@@ -1601,14 +1600,12 @@
             // 3. RECOMENDACIONES
             if (categoryFilter === 'all' || categoryFilter === 'recom') {
                 for (const rec of recomendationsData) {
-                    const query = getCleanPlaceName(rec.LinkGoogleMaps || rec.Ubicacion || rec.Titulo || rec.title);
-                    if (!query) continue;
-
-                    const coords = await geocodeLocation(query);
+                    const targetLoc = rec.Coords || rec.LinkGoogleMaps || rec.Ubicacion || rec.Titulo;
+                    const coords = await parseOrGeocodeCoords(targetLoc);
                     if (coords) {
                         const marker = L.marker(coords).addTo(leafletMap);
-                        const mapsUrl = rec.LinkGoogleMaps || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
-                        const routeFromHotelUrl = getHotelRouteUrl(query, rec.FechaTentativa || '');
+                        const mapsUrl = rec.Coords ? `https://www.google.com/maps/search/?api=1&query=${rec.Coords}` : (rec.LinkGoogleMaps || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(rec.Ubicacion)}`);
+                        const routeFromHotelUrl = getHotelRouteUrl(targetLoc, rec.FechaTentativa || '');
 
                         marker.bindPopup(`
                             <div style="font-family:Inter, sans-serif;"> 
