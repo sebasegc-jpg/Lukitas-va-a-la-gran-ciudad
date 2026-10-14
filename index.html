@@ -877,26 +877,59 @@
             } 
         } 
 
+        // OBTENER HOTEL/ALOJAMIENTO ACTIVO PARA UNA FECHA DADA
+        function getHotelForDate(dateStr) {
+            if (!accommodationsData || accommodationsData.length === 0) return null;
+            let targetObj = parseDateStr(dateStr);
+            if (!targetObj) return accommodationsData[0]; // fallback al primero guardado
+
+            let found = accommodationsData.find(a => {
+                let sObj = parseDateStr(a.start);
+                let eObj = parseDateStr(a.end);
+                if (!sObj || !eObj) return false;
+                let t = new Date(targetObj.getFullYear(), targetObj.getMonth(), targetObj.getDate());
+                let s = new Date(sObj.getFullYear(), sObj.getMonth(), sObj.getDate());
+                let e = new Date(eObj.getFullYear(), eObj.getMonth(), eObj.getDate());
+                return t >= s && t <= e;
+            });
+
+            return found || accommodationsData[0];
+        }
+
+        // GENERAR ENLACE DE NAVEGACIÓN DESDE EL HOTEL HASTA EL DESTINO
+        function getHotelRouteUrl(destAddress, targetDateStr) {
+            let hotel = getHotelForDate(targetDateStr);
+            if (!hotel) {
+                return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destAddress)}`;
+            }
+            let originClean = getCleanPlaceName(hotel.mapUrl || hotel.name);
+            let destClean = getCleanPlaceName(destAddress);
+            return `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(originClean)}&destination=${encodeURIComponent(destClean)}&travelmode=transit`;
+        }
+
         async function loadRecomendacionesFromSheet() { 
             const container = document.getElementById('recom-container'); 
             try { 
                 const res = await fetch(`${SCRIPT_URL}?sheet=Recomendaciones`); 
                 const data = await res.json(); 
                 if (Array.isArray(data) && data.length > 0) { 
-                    recomendationsData = data;
+                    recomendationsData = data; 
                     container.innerHTML = data.map(item => { 
                         const title = item.Titulo || item.title || 'Recomendación'; 
-                        const tipo = item.Tipo || 'Recomendación';
-                        const ubicacion = item.Ubicacion || '';
-                        const mapsUrl = item.LinkGoogleMaps || (ubicacion ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ubicacion)}` : '');
+                        const tipo = item.Tipo || 'Recomendación'; 
+                        const ubicacion = item.Ubicacion || ''; 
+                        const mapsUrl = item.LinkGoogleMaps || (ubicacion ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ubicacion)}` : ''); 
+                        const routeFromHotelUrl = getHotelRouteUrl(item.LinkGoogleMaps || ubicacion, item.FechaTentativa || '');
+                        
                         const rawDetails = item.Detalles || ''; 
                         const formattedBody = formatMarkdown(rawDetails); 
                         
-                        const safeTitle = title.replace(/'/g, "\\'");
-                        const safeLoc = (item.LinkGoogleMaps || ubicacion).replace(/'/g, "\\'");
-                        const safeDet = rawDetails.replace(/'/g, "\\'").replace(/\n/g, ' ');
+                        const safeTitle = title.replace(/'/g, "\\'"); 
+                        const safeLoc = (item.LinkGoogleMaps || ubicacion).replace(/'/g, "\\'"); 
+                        const safeDet = rawDetails.replace(/'/g, "\\'").replace(/\n/g, ' '); 
 
-                        let mapsBtn = mapsUrl ? `<a href="${mapsUrl}" target="_blank" style="color:var(--primary); font-weight:bold; margin-right:10px;">🗺️ Abrir en Maps</a>` : '';
+                        let mapsBtn = mapsUrl ? `<a href="${mapsUrl}" target="_blank" style="color:var(--primary); font-weight:bold; margin-right:10px;">🗺️ Ver en Maps</a>` : ''; 
+                        let hotelRouteBtn = (ubicacion || item.LinkGoogleMaps) ? `<a href="${routeFromHotelUrl}" target="_blank" style="background:#0284c7; color:white; padding:4px 8px; border-radius:4px; font-weight:bold; text-decoration:none; margin-right:10px;">🚗 Ruta desde Hotel</a>` : '';
 
                         return ` 
                             <details class="compact-item"> 
@@ -906,12 +939,13 @@
                                 </summary> 
                                 <div class="compact-content"> 
                                     ${formattedBody} 
-                                    <div style="margin-top:0.8rem; display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
-                                        ${mapsBtn}
-                                        <button onclick="promoteToItinerary('${safeTitle}', '${safeLoc}', '${safeDet}')" style="background:var(--primary); color:white; border:none; padding:4px 8px; border-radius:4px; font-weight:bold; cursor:pointer;">
-                                            ➕ Pasar al Itinerario
-                                        </button>
-                                    </div>
+                                    <div style="margin-top:0.8rem; display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;"> 
+                                        ${mapsBtn} 
+                                        ${hotelRouteBtn}
+                                        <button onclick="promoteToItinerary('${safeTitle}', '${safeLoc}', '${safeDet}')" style="background:var(--primary); color:white; border:none; padding:4px 8px; border-radius:4px; font-weight:bold; cursor:pointer;"> 
+                                            ➕ Pasar al Itinerario 
+                                        </button> 
+                                    </div> 
                                 </div> 
                             </details> 
                         `; 
@@ -1201,7 +1235,11 @@
             } else { 
                 let loc = ev.location || ev.title; 
                 let locLink = loc.startsWith('http') ? `<a href="${loc}" target="_blank" style="color:#1d4ed8; text-decoration:underline;">📍 Abrir en Google Maps</a>` : `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}" target="_blank" style="color:#1d4ed8; text-decoration:underline;">📍 ${loc}</a>`; 
-                routeHTML = `<p><b>Ubicación:</b> ${locLink}</p>`; 
+                
+                let routeFromHotelUrl = getHotelRouteUrl(loc, ev.date);
+                let hotelRouteBtn = `<a href="${routeFromHotelUrl}" target="_blank" style="display:inline-block; margin-left:8px; background:#0284c7; color:white; padding:4px 8px; border-radius:4px; font-weight:bold; text-decoration:none; font-size:0.75rem;">🚗 Ruta desde Hotel</a>`;
+
+                routeHTML = `<p><b>Ubicación:</b> ${locLink} ${hotelRouteBtn}</p>`; 
             } 
 
             let arrivalInfo = (ev.endDate) ? `<p><b>Llegada / Fin:</b> ${ev.endDate} ${ev.endHour || 0}:00hs</p>` : ''; 
@@ -1477,7 +1515,7 @@
 
         async function geocodeLocation(query) { 
             if (!query) return null;
-            let cleanQuery = String(query).replace(/^https?:\/\/.*$/g, '').trim(); 
+            let cleanQuery = String(query).replace(/^https?:\/\/.*$/g, '').replace(/query=([^&]+).*/g, '$1').trim(); 
             if (!cleanQuery) return null;
 
             const cacheKey = cleanQuery.toLowerCase();
@@ -1507,7 +1545,8 @@
             // 1. ALOJAMIENTOS
             if (categoryFilter === 'all' || categoryFilter === 'hotel') {
                 for (const acc of accommodationsData) { 
-                    const coords = await geocodeLocation(acc.name); 
+                    const query = getCleanPlaceName(acc.mapUrl || acc.name);
+                    const coords = await geocodeLocation(query); 
                     if (coords) { 
                         const mapSearchUrl = acc.mapUrl.startsWith('http') ? acc.mapUrl : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(acc.name)}`; 
                         const marker = L.marker(coords).addTo(leafletMap); 
@@ -1531,21 +1570,27 @@
                 for (const ev of localEvents) { 
                     if (ev.type === 'sleep') continue; 
                     
-                    const query = ev.location || ev.title; 
-                    if (!query || query.startsWith('http')) continue; 
+                    const query = getCleanPlaceName(ev.location || ev.title); 
+                    if (!query) continue; 
 
                     const coords = await geocodeLocation(query); 
                     if (coords) { 
                         const icon = ev.type === 'show' ? '🎸' : (ev.type === 'transporte' ? '🚌' : '📍'); 
                         const marker = L.marker(coords).addTo(leafletMap); 
+                        const routeFromHotelUrl = getHotelRouteUrl(query, ev.date);
                         
                         marker.bindPopup(` 
                             <div style="font-family:Inter, sans-serif;"> 
                                 <h4 style="margin:0 0 4px 0; color:#1e293b;">${icon} ${ev.title}</h4> 
                                 <p style="font-size:0.8rem; color:#475569; margin-bottom:8px;">${ev.date} (${ev.startHour !== null ? ev.startHour + ':00hs' : 'Pendiente'})</p> 
-                                <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}" target="_blank" style="display:inline-block; background:#2563eb; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:0.75rem; font-weight:bold;"> 
-                                    🧭 Abrir en Google Maps 
-                                </a> 
+                                <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                                    <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}" target="_blank" style="display:inline-block; background:#2563eb; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:0.75rem; font-weight:bold;"> 
+                                        🧭 Abrir en Maps 
+                                    </a> 
+                                    <a href="${routeFromHotelUrl}" target="_blank" style="display:inline-block; background:#0284c7; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:0.75rem; font-weight:bold;"> 
+                                        🚗 Ruta desde Hotel 
+                                    </a>
+                                </div>
                             </div> 
                         `); 
                         mapMarkers.push(marker); 
@@ -1556,21 +1601,27 @@
             // 3. RECOMENDACIONES
             if (categoryFilter === 'all' || categoryFilter === 'recom') {
                 for (const rec of recomendationsData) {
-                    const query = rec.Ubicacion || rec.Titulo || rec.title;
+                    const query = getCleanPlaceName(rec.LinkGoogleMaps || rec.Ubicacion || rec.Titulo || rec.title);
                     if (!query) continue;
 
                     const coords = await geocodeLocation(query);
                     if (coords) {
                         const marker = L.marker(coords).addTo(leafletMap);
                         const mapsUrl = rec.LinkGoogleMaps || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+                        const routeFromHotelUrl = getHotelRouteUrl(query, rec.FechaTentativa || '');
 
                         marker.bindPopup(`
                             <div style="font-family:Inter, sans-serif;"> 
                                 <h4 style="margin:0 0 4px 0; color:#0284c7;">💡 ${rec.Titulo || rec.title}</h4> 
                                 <p style="font-size:0.8rem; color:#475569; margin-bottom:8px;">${rec.Tipo || 'Recomendación'}</p> 
-                                <a href="${mapsUrl}" target="_blank" style="display:inline-block; background:#0284c7; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:0.75rem; font-weight:bold;"> 
-                                    🧭 Abrir en Google Maps 
-                                </a> 
+                                <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                                    <a href="${mapsUrl}" target="_blank" style="display:inline-block; background:#0284c7; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:0.75rem; font-weight:bold;"> 
+                                        🧭 Abrir en Maps 
+                                    </a> 
+                                    <a href="${routeFromHotelUrl}" target="_blank" style="display:inline-block; background:#2563eb; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:0.75rem; font-weight:bold;"> 
+                                        🚗 Ruta desde Hotel 
+                                    </a>
+                                </div>
                             </div> 
                         `);
                         mapMarkers.push(marker);
