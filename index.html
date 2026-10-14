@@ -718,8 +718,8 @@
             if (tabId === 'transporte') { 
                 loadRecomendacionesFromSheet();
                 setTimeout(() => { 
-                    if (leafletMap) leafletMap.invalidateSize(); 
-                    else initLeafletMap(); 
+                    if (!leafletMap) initLeafletMap();
+                    else leafletMap.invalidateSize(); 
                     renderTimeline(); 
                     renderMapMarkers(); 
                 }, 200); 
