@@ -587,7 +587,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script> 
 
     <script> 
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw8Mg5e-3CSQmOt2EOxcQgSptrJLVDW8vsAbUGduS6qzmBrp8rWEMqePpImi0lWe7ET/exec"; 
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxDAXkKiPDce64EHfNoI4xcA8rmeipHRBJVzwTJ2XQhFJjMUEFSAju9sbaFi_R0qZuYFA/exec"; 
         let ARS_USD_RATE = 1250;  
 
         let START_DATE = null; 
@@ -735,6 +735,7 @@
             buildGrid(localEvents); 
         } 
 
+        // PARSEO STRICTO DD/MM/YYYY
         function parseDateStr(rawDate) { 
             if (!rawDate) return null; 
             let clean = String(rawDate).split('T')[0].split(' ')[0].replace(/^"|"$/g, '').trim(); 
@@ -896,7 +897,6 @@
             return found || accommodationsData[0];
         }
 
-        // GENERADOR DE RUTA HOTEL ➔ DESTINO CON COORDENADAS LIMPIAS
         function getHotelRouteUrl(destAddressOrCoords, targetDateStr) {
             let hotel = getHotelForDate(targetDateStr);
             let origin = (hotel && hotel.coords) ? hotel.coords : (hotel ? (hotel.mapUrl || hotel.name) : 'Buenos Aires');
@@ -1210,7 +1210,7 @@
                 let destCoords = ev.coordsFin || ev.destLink;
 
                 let origBtn = origCoords ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(origCoords)}" target="_blank" style="display:inline-block; background:#2563eb; color:white; padding:4px 8px; border-radius:4px; font-weight:bold; text-decoration:none; font-size:0.75rem;">📍 Punto de Partida</a>` : '';
-                let destBtn = destCoords ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destCoords)}" target="_blank" style="display:inline-block; background:#0284c7; color:white; padding:4px 8px; border-radius:4px; font-weight:bold; text-decoration:none; font-size:0.75rem; margin-left:6px;">📍 Punto de Arribo</a>` : '';
+                let destBtn = destCoords ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destCoords)}" target="_blank" style="display:inline-block; background:#0284c7; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:0.75rem; margin-left:6px;">📍 Punto de Arribo</a>` : '';
 
                 routeHTML = ` 
                     <div style="margin: 0.8rem 0; padding: 0.8rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; font-size: 0.85rem;"> 
@@ -1279,9 +1279,9 @@
             document.getElementById('ev-old-date').value = ev.date; 
 
             document.getElementById('ev-title').value = ev.title; 
-            document.getElementById('ev-date').value = ev.date; 
+            document.getElementById('ev-date').value = formatDateToISO(parseDateStr(ev.date)); 
             document.getElementById('ev-hour').value = ev.startHour !== null ? ev.startHour : 8; 
-            document.getElementById('ev-end-date').value = ev.endDate || ev.date; 
+            document.getElementById('ev-end-date').value = formatDateToISO(parseDateStr(ev.endDate || ev.date)); 
             document.getElementById('ev-end-hour').value = ev.endHour !== null ? ev.endHour : 10; 
             document.getElementById('ev-duration').value = ev.durationHours || 2; 
             document.getElementById('ev-type').value = ev.type || 'actividad'; 
