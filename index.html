@@ -483,7 +483,7 @@
                 <div style="display: flex; gap: 0.5rem;">
                     <div class="form-group" style="flex:1;">
                         <label>Duración Calculada (Horas)</label>
-                        <input type="number" id="ev-duration" min="1" max="120" required value="2">
+                        <input type="number" id="ev-duration" min="1" max="720" required value="2">
                     </div>
                     <div class="form-group" style="flex:1;">
                         <label>Tipo de Evento</label>
@@ -602,6 +602,7 @@
         let traveler2 = localStorage.getItem('caba_lukitas_traveler2') || '';
 
         let currentModalEventObj = null;
+        let editingAccommodation = null; // [CAMBIO 4] alojamiento que se está editando (o null)
         let leafletMap = null;
         let mapMarkers = [];
         let mapSubwayLayers = [];
@@ -828,6 +829,14 @@
             return dates;
         }
 
+        // [CAMBIO 4] Lee una hora (0-23) de una celda. Si la celda tiene una fecha u otra cosa, devuelve null.
+        function parseHourCell(v) {
+            if (v === undefined || v === null || v === '') return null;
+            if (String(v).indexOf('/') !== -1) return null; // es una fecha, no una hora
+            const n = parseInt(v);
+            return (!isNaN(n) && n >= 0 && n <= 23) ? n : null;
+        }
+
         async function loadAccommodationsFromSheet() {
             try {
                 const res = await fetch(`${SCRIPT_URL}?sheet=Alojamiento`);
@@ -839,7 +848,14 @@
                         const end = r.FechaFin || r.CheckOut || '';
                         const mapUrl = r.Direccion || r.LinkReserva || '';
                         const coords = r.Coords || '';
-                        return { name, start, end, mapUrl, coords };
+                        // [CAMBIO 4] Datos extra para poder editar el alojamiento
+                        const direccion = r.Direccion || '';
+                        const city = r.Ciudad || '';
+                        const bookingLink = r.LinkReserva || '';
+                        const checkInHour = parseHourCell(r.CheckIn);
+                        const checkOutHour = parseHourCell(r.CheckOut);
+                        const detalles = r.Detalles || '';
+                        return { name, start, end, mapUrl, coords, direccion, city, bookingLink, checkInHour, checkOutHour, detalles };
                     }).filter(a => a.name !== '');
                 }
             } catch (e) {
@@ -1190,9 +1206,49 @@
                             🗺️ Abrir ubicación en Google Maps
                         </a>
                     </div>
+                    <div style="margin-top:15px;">
+                        <button onclick="editAccommodationModal('${acc.name.replace(/'/g, "\\'")}')" style="background:#0284c7; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:bold;">
+                            ✏️ Editar Alojamiento
+                        </button>
+                    </div>
                 `;
                 document.getElementById('eventModal').style.display = 'flex';
             }
+        }
+
+        // [CAMBIO 4] Abre el formulario de edición cargado con los datos del alojamiento
+        function editAccommodationModal(name) {
+            const acc = accommodationsData.find(a => a.name === name);
+            if (!acc) return;
+            editingAccommodation = acc;
+
+            populateLocationSelects();
+            closeModal('eventModal');
+            document.getElementById('addEventForm').reset();
+            document.getElementById('modalFormHeaderTitle').innerText = "Editar Alojamiento";
+
+            document.getElementById('ev-old-title').value = acc.name;
+            document.getElementById('ev-old-date').value = acc.start;
+
+            document.getElementById('ev-title').value = acc.name;
+            document.getElementById('ev-date').value = formatDateToISO(parseDateStr(acc.start));
+            document.getElementById('ev-end-date').value = formatDateToISO(parseDateStr(acc.end));
+            document.getElementById('ev-hour').value = acc.checkInHour !== null ? acc.checkInHour : 14;
+            document.getElementById('ev-end-hour').value = acc.checkOutHour !== null ? acc.checkOutHour : 10;
+            document.getElementById('ev-duration').value = 1;
+
+            // El tipo queda fijo en "Alojamiento" para no mover el hotel a otra pestaña por error
+            const typeSelect = document.getElementById('ev-type');
+            typeSelect.value = 'sleep';
+            typeSelect.disabled = true;
+
+            document.getElementById('ev-booking-code').value = acc.bookingLink || '';
+            document.getElementById('ev-location').value = acc.direccion || '';
+            document.getElementById('ev-cost').value = '';
+            document.getElementById('ev-details').value = acc.detalles || ''; // se conservan los detalles del hotel
+
+            toggleLocationFields();
+            document.getElementById('addModal').style.display = 'flex';
         }
 
         function showModalByObject(title, date, startHour) {
@@ -1259,6 +1315,8 @@
 
         function openAddModal() {
             populateLocationSelects();
+            editingAccommodation = null; // [CAMBIO 4]
+            document.getElementById('ev-type').disabled = false; // [CAMBIO 4]
             document.getElementById('modalFormHeaderTitle').innerText = "Añadir Nueva Actividad";
             document.getElementById('addEventForm').reset();
             document.getElementById('ev-old-title').value = "";
@@ -1272,6 +1330,8 @@
             const ev = currentModalEventObj;
 
             populateLocationSelects();
+            editingAccommodation = null; // [CAMBIO 4]
+            document.getElementById('ev-type').disabled = false; // [CAMBIO 4]
             closeModal('eventModal');
             document.getElementById('modalFormHeaderTitle').innerText = "Editar Actividad / Evento";
 
@@ -1362,11 +1422,16 @@
 
             if (type === 'sleep') {
                 newEv.Nombre = newEv.Titulo;
-                newEv.Ciudad = 'CABA';
+                // [CAMBIO 4] Si se edita un alojamiento, se conserva su ciudad
+                newEv.Ciudad = (editingAccommodation && editingAccommodation.city) ? editingAccommodation.city : 'CABA';
                 newEv.CheckIn = newEv.HoraInicio;
                 newEv.CheckOut = newEv.HoraFin;
                 newEv.LinkReserva = newEv.CodigoReserva;
                 newEv.Direccion = newEv.UbicacionInicio;
+                // [CAMBIO 4] Si no hay dirección, no borrar las coordenadas que ya tenía
+                if (editingAccommodation && !newEv.Direccion && editingAccommodation.coords) {
+                    newEv.Coords = editingAccommodation.coords;
+                }
             }
 
             // Botón en modo "Guardando..." para evitar doble clic
@@ -1396,6 +1461,8 @@
 
                 closeModal('addModal');
                 document.getElementById('addEventForm').reset();
+                editingAccommodation = null; // [CAMBIO 4]
+                document.getElementById('ev-type').disabled = false; // [CAMBIO 4]
             } catch (err) {
                 alert('No se pudo guardar el evento: ' + err.message);
             } finally {
