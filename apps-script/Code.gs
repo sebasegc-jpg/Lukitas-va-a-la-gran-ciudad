@@ -236,13 +236,14 @@ function resolveGoogleMapsCoords(urlOrText) {
   return "";
 }
 
-// Busca coordenadas dentro de un texto o URL de Google Maps
+// Busca coordenadas dentro de un texto o URL de Google Maps.
+// [CAMBIO 5] Prioriza !3d!4d (punto exacto del lugar) sobre @ (centro de la pantalla).
 function extraerCoordsDeTexto(texto) {
   if (!texto) return "";
   var t = String(texto);
-  var m = t.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) ||
-          t.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) ||
-          t.match(/query=(-?\d+\.\d+)(?:%2C|,)(-?\d+\.\d+)/);
+  var m = t.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) ||
+          t.match(/query=(-?\d+\.\d+)(?:%2C|,)(-?\d+\.\d+)/) ||
+          t.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
   return m ? m[1] + "," + m[2] : "";
 }
 
@@ -318,4 +319,57 @@ function diagnosticarLink() {
     url = location;
   }
   Logger.log('Resultado de resolveGoogleMapsCoords: "' + resolveGoogleMapsCoords(link) + '"');
+}
+// Diagnóstico: muestra cada salto de redirección de un link y busca coordenadas en varios formatos.
+// NO escribe en el Sheet.
+function diagnosticarLink() {
+  var link = 'https://maps.app.goo.gl/phY1r4YLacR9Jeiq5';
+  var options = {
+    followRedirects: false,
+    muteHttpExceptions: true,
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    }
+  };
+  var url = link;
+  var nombreLugar = extraerNombreLugar(link);
+
+  buscarPatron(link, 'En el link original @', /@(-?\d+\.\d+),(-?\d+\.\d+)/);
+  buscarPatron(link, 'En el link original !3d!4d', /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+
+  for (var hop = 0; hop < 6; hop++) {
+    var resp = UrlFetchApp.fetch(url, options);
+    var headers = resp.getHeaders();
+    var location = headers['Location'] || headers['location'] || '';
+    Logger.log('Salto ' + hop + ' | código ' + resp.getResponseCode() + ' | Location: ' + location);
+
+    if (location) {
+      buscarPatron(location, 'Salto ' + hop + ' @', /@(-?\d+\.\d+),(-?\d+\.\d+)/);
+      buscarPatron(location, 'Salto ' + hop + ' !3d!4d', /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+      var nombre = extraerNombreLugar(location);
+      if (nombre) nombreLugar = nombre;
+    } else {
+      var texto = resp.getContentText();
+      Logger.log('--- Buscando dentro de la página ---');
+      buscarPatron(texto, 'Página center=', /center=(-?\d+\.\d+)(?:%2C|,)(-?\d+\.\d+)/);
+      buscarPatron(texto, 'Página markers=', /markers=(-?\d+\.\d+)(?:%2C|,)(-?\d+\.\d+)/);
+      buscarPatron(texto, 'Página !3d!4d', /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+      buscarPatron(texto, 'Página [null,null,lat,lng]', /\[null,null,(-?\d+\.\d+),(-?\d+\.\d+)\]/);
+      buscarPatron(texto, 'Página @lat,lng', /@(-?\d+\.\d+),(-?\d+\.\d+)/);
+      break;
+    }
+    url = location;
+  }
+
+  Logger.log('Nombre del lugar detectado: "' + nombreLugar + '"');
+  if (nombreLugar) {
+    Logger.log('Resultado del geocodificador (plan B): "' + geocodificarNombre(nombreLugar) + '"');
+  }
+  Logger.log('Resultado final de resolveGoogleMapsCoords: "' + resolveGoogleMapsCoords(link) + '"');
+}
+
+// Ayudante del diagnóstico: busca un patrón y muestra lo que encontró
+function buscarPatron(texto, etiqueta, regex) {
+  var m = String(texto).match(regex);
+  Logger.log(etiqueta + ': ' + (m ? m[1] + ',' + m[2] : '(no encontrado)'));
 }
