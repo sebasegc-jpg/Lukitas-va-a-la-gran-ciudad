@@ -38,7 +38,7 @@
 
         @media (min-width: 1024px) {
             body {
-                background-size: 650px 100vh, 650px 100vh;
+                background-size: 600px 100vh, 600px 100vh;
                 background-repeat: no-repeat, no-repeat;
                 background-position: left top, right top;
                 background-attachment: fixed, fixed;
@@ -299,6 +299,8 @@
                         <button class="filter-btn" onclick="filterMapMarkers('hotel', event)">🏨 Alojamientos</button>
                         <button class="filter-btn" onclick="filterMapMarkers('itinerario', event)">📅 Itinerario</button>
                         <button class="filter-btn" onclick="filterMapMarkers('recom', event)">💡 Recomendaciones</button>
+                        <!-- [CAMBIO 9] Prende/apaga las líneas de los trayectos -->
+                        <button class="filter-btn trip-toggle" onclick="toggleTripLines(event)">〰️ Trayectos</button>
                     </div>
                 </div>
 
@@ -675,6 +677,8 @@
         let leafletMap = null;
         let mapMarkers = [];
         let mapSubwayLayers = [];
+        let showTripLines = false;      // [CAMBIO 9] líneas de trayectos ocultas de entrada
+        let currentMapFilter = 'all';   // [CAMBIO 9] recuerda el filtro elegido
 
         // RED DE SUBTES TRAZADA
         const SUBWAY_LINES = {
@@ -1830,7 +1834,7 @@
 
         // [CAMBIO 7 + 8] Dibuja los pines solo con coordenadas guardadas.
         // Transportes: pin de salida y de llegada unidos por línea punteada.
-        function renderMapMarkers(categoryFilter = 'all') {
+        function renderMapMarkers(categoryFilter = currentMapFilter) {
             if (!leafletMap) return;
 
             mapMarkers.forEach(m => leafletMap.removeLayer(m));
@@ -1888,7 +1892,7 @@
                             `);
                             mapMarkers.push(m2);
                         }
-                        if (start && end) {
+                        if (start && end && showTripLines) { // [CAMBIO 9]
                             const line = L.polyline([start, end], { color: '#16a34a', weight: 3, opacity: 0.8, dashArray: '8, 8' }).addTo(leafletMap);
                             line.bindPopup(`<b>${icon} ${ev.title}</b><br>${when}`);
                             mapMarkers.push(line);
@@ -1941,9 +1945,19 @@
 
         function filterMapMarkers(cat, evt) {
             if (!leafletMap) initLeafletMap();
-            document.querySelectorAll('.zone-filters .filter-btn').forEach(btn => btn.classList.remove('active'));
+            // [CAMBIO 9] el botón Trayectos no se apaga al cambiar de filtro
+            document.querySelectorAll('.zone-filters .filter-btn:not(.trip-toggle)').forEach(btn => btn.classList.remove('active'));
             if (evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+            currentMapFilter = cat;
             renderMapMarkers(cat);
+        }
+
+        // [CAMBIO 9] Prende/apaga las líneas de salida → llegada de los transportes
+        function toggleTripLines(evt) {
+            if (!leafletMap) initLeafletMap();
+            showTripLines = !showTripLines;
+            if (evt && evt.currentTarget) evt.currentTarget.classList.toggle('active', showTripLines);
+            renderMapMarkers();
         }
 
         function updateTravelerLabels() {
