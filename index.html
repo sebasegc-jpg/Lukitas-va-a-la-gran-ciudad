@@ -38,7 +38,7 @@
 
         @media (min-width: 1024px) {
             body {
-                background-size: 610px 100vh, 610px 100vh;
+                background-size: 600px 100vh, 600px 100vh;
                 background-repeat: no-repeat, no-repeat;
                 background-position: left top, right top;
                 background-attachment: fixed, fixed;
@@ -313,6 +313,9 @@
                     </p>
                 </div>
 
+                <!-- [CAMBIO 8] Aviso de lugares sin coordenadas (reemplaza la búsqueda por nombre) -->
+                <div id="map-missing-warning" style="display:none; margin-top:1rem; padding:0.7rem 0.9rem; background:#fff7ed; border:1px solid #fed7aa; border-radius:8px; font-size:0.82rem; color:#9a3412;"></div>
+
                 <div class="map-layout">
                     <div class="map-container">
                         <div id="leaflet-map"></div>
@@ -562,6 +565,22 @@
 
                 <!-- SELECCIÓN DINÁMICA DE ORIGEN Y DESTINO PARA TRANSPORTE -->
                 <div style="display: flex; gap: 0.5rem; flex-direction:column; display:none;" id="transport-location-group">
+                    <!-- [CAMBIO 7] Medio de transporte -->
+                    <div class="form-group">
+                        <label>Medio de transporte:</label>
+                        <select id="ev-medio">
+                            <option value="">-- Elegir medio --</option>
+                            <option value="Avión">✈️ Avión</option>
+                            <option value="Tren">🚄 Tren</option>
+                            <option value="Colectivo">🚌 Colectivo</option>
+                            <option value="Subte/Metro">🚇 Subte / Metro</option>
+                            <option value="Uber/Auto">🚕 Uber / Auto / Taxi</option>
+                            <option value="Barco">🚢 Barco</option>
+                            <option value="Ferry">⛴️ Ferry</option>
+                            <option value="Bicicleta">🚲 Bicicleta</option>
+                            <option value="A pie">🚶 A pie</option>
+                        </select>
+                    </div>
                     <div class="form-group">
                         <label>Origen del Trayecto:</label>
                         <select id="ev-origin-select" onchange="handleLocationSelectChange('ev-origin-select', 'ev-origin-link')" style="margin-bottom:0.4rem;">
@@ -656,7 +675,6 @@
         let leafletMap = null;
         let mapMarkers = [];
         let mapSubwayLayers = [];
-        let geocodeCache = {};
 
         // RED DE SUBTES TRAZADA
         const SUBWAY_LINES = {
@@ -966,12 +984,86 @@
                         const endDate = row.FechaFin || date;
                         const endHour = row.HoraFin !== undefined && row.HoraFin !== "" ? parseInt(row.HoraFin) : (startHour !== null ? startHour : 0);
 
-                        return { title, date, startHour, durationHours, type, location, coordsInicio, coordsFin, cost, details, bookingCode, originLink, destLink, endDate, endHour };
+                        const medio = String(row.Medio || '').trim(); // [CAMBIO 7]
+
+                        return { title, date, startHour, durationHours, type, location, coordsInicio, coordsFin, cost, details, bookingCode, originLink, destLink, endDate, endHour, medio };
                     }).filter(e => e.title !== '');
                 }
             } catch (error) {
                 console.error('Error al cargar eventos:', error);
             }
+        }
+
+        // ===== [CAMBIO 7] MEDIOS DE TRANSPORTE, HOTELES POR NOCHE Y RUTAS =====
+
+        const MEDIO_ICONS = {
+            'Avión': '✈️', 'Tren': '🚄', 'Colectivo': '🚌', 'Subte/Metro': '🚇', 'Uber/Auto': '🚕',
+            'Barco': '🚢', 'Ferry': '⛴️', 'Bicicleta': '🚲', 'A pie': '🚶'
+        };
+        // Modo de Google Maps para el recorrido del trayecto (null = no tiene sentido, ej. avión)
+        const MEDIO_TRAVELMODE = {
+            'Avión': null, 'Barco': null, 'Ferry': null,
+            'Tren': 'transit', 'Colectivo': 'transit', 'Subte/Metro': 'transit',
+            'Uber/Auto': 'driving', 'Bicicleta': 'bicycling', 'A pie': 'walking'
+        };
+
+        // Medio de un evento. Si está vacío y el título dice "vuelo", se toma como Avión.
+        function getMedio(ev) {
+            if (!ev || ev.type !== 'transporte') return '';
+            if (ev.medio && MEDIO_ICONS[ev.medio] !== undefined) return ev.medio;
+            if (/vuelo/i.test(ev.title || '')) return 'Avión';
+            return '';
+        }
+
+        function getEventIcon(ev) {
+            if (ev.type === 'transporte') return MEDIO_ICONS[getMedio(ev)] || '🚌';
+            if (ev.type === 'show') return '🎸';
+            if (ev.type === 'sleep') return '🏨';
+            return '📍';
+        }
+
+        // Fecha sin hora, para comparar días
+        function dayOnly(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+
+        // Hotel donde dormiste la noche ANTERIOR a esta fecha (check-in antes de hoy, check-out hoy o después)
+        function getHotelSleptBefore(dateStr) {
+            const t = parseDateStr(dateStr);
+            if (!t) return null;
+            const td = dayOnly(t);
+            return accommodationsData.find(a => {
+                const s = parseDateStr(a.start), e = parseDateStr(a.end);
+                return s && e && dayOnly(s) < td && dayOnly(e) >= td;
+            }) || null;
+        }
+
+        // Hotel donde dormís la noche de esta fecha (check-in hoy o antes, check-out después de hoy)
+        function getHotelSleepingOn(dateStr) {
+            const t = parseDateStr(dateStr);
+            if (!t) return null;
+            const td = dayOnly(t);
+            return accommodationsData.find(a => {
+                const s = parseDateStr(a.start), e = parseDateStr(a.end);
+                return s && e && dayOnly(s) <= td && dayOnly(e) > td;
+            }) || null;
+        }
+
+        // Link de Google Maps con origen y destino en coordenadas
+        function buildDirectionsUrl(origin, destination, mode) {
+            return `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&travelmode=${mode || 'transit'}`;
+        }
+
+        // Tramos con el mismo código de reserva (vuelos con escala), ordenados por fecha y hora
+        function getTicketLegs(ev) {
+            const code = String(ev.bookingCode || '').trim().toLowerCase();
+            if (!code) return [ev];
+            const legs = localEvents.filter(e => e.type === 'transporte' && String(e.bookingCode || '').trim().toLowerCase() === code);
+            const sortKey = e => { const d = parseDateStr(e.date); return (d ? d.getTime() : 0) + (e.startHour || 0) * 3600000; };
+            legs.sort((a, b) => sortKey(a) - sortKey(b));
+            return legs.length > 0 ? legs : [ev];
+        }
+
+        function routeButton(url, label, color) {
+            return `<a href="${url}" target="_blank" style="display:inline-block; background:${color}; color:white; padding:6px 10px; border-radius:4px; font-weight:bold; text-decoration:none; font-size:0.78rem;">${label}</a>`;
         }
 
         function getHotelForDate(dateStr) {
@@ -1253,7 +1345,7 @@
 
                         let locText = evStart.type === 'transporte' ? 'Traslado / Vuelo' : (evStart.location || '');
                         let safeTitle = evStart.title.replace(/'/g, "\\'");
-                        let icon = evStart.type === 'transporte' ? '🚌' : (evStart.type === 'show' ? '🎸' : (evStart.type === 'sleep' ? '🏨' : '📍'));
+                        let icon = getEventIcon(evStart); // [CAMBIO 7]
 
                         rowHTML += `<td rowspan="${visualSpan}" style="padding:1px; vertical-align:top; height:${visualSpan * 38}px;">
                             <div class="event-block event-${evStart.type || 'actividad'}" onclick="showModalByObject('${safeTitle}', '${evStart.date}', ${evStart.startHour})">
@@ -1347,13 +1439,60 @@
                 let origBtn = origCoords ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(origCoords)}" target="_blank" style="display:inline-block; background:#2563eb; color:white; padding:4px 8px; border-radius:4px; font-weight:bold; text-decoration:none; font-size:0.75rem;">📍 Punto de Partida</a>` : '';
                 let destBtn = destCoords ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destCoords)}" target="_blank" style="display:inline-block; background:#0284c7; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:0.75rem; margin-left:6px;">📍 Punto de Arribo</a>` : '';
 
+                // [CAMBIO 7] Medio, escalas y rutas hacia/desde los alojamientos
+                const medio = getMedio(ev);
+                const medioHTML = medio ? `<p style="margin-bottom:6px;"><b>Medio:</b> ${MEDIO_ICONS[medio]} ${medio}</p>` : `<p style="margin-bottom:6px; color:#b45309;"><b>Medio:</b> sin definir (Editar → elegir medio)</p>`;
+
+                const legs = getTicketLegs(ev);
+                const legIdx = legs.indexOf(ev);
+                const isFirstLeg = legIdx <= 0;
+                const isLastLeg = legIdx === -1 || legIdx === legs.length - 1;
+                let legsHTML = '';
+                if (legs.length > 1) {
+                    legsHTML = `<div style="margin-bottom:8px; padding:6px 8px; background:#fef3c7; border-radius:4px; font-size:0.8rem; color:#92400e;">
+                        🔗 <b>Mismo ticket — tramo ${legIdx + 1} de ${legs.length}:</b><br>
+                        ${legs.map((l, i) => `${i === legIdx ? '<b>' : ''}${i + 1}. ${getEventIcon(l)} ${l.title} (${formatDateStandard(l.date)} ${l.startHour !== null ? l.startHour + ':00' : ''})${i === legIdx ? '</b>' : ''}`).join('<br>')}
+                    </div>`;
+                }
+
+                let chainBtns = [];
+                // Ir a la salida: desde el hotel donde dormiste la noche anterior (solo en el primer tramo)
+                if (isFirstLeg && ev.coordsInicio) {
+                    const hotelBefore = getHotelSleptBefore(ev.date);
+                    if (hotelBefore && hotelBefore.coords) {
+                        chainBtns.push(routeButton(buildDirectionsUrl(hotelBefore.coords, ev.coordsInicio, 'transit'), `🏨➡️ Ir a la salida (desde ${hotelBefore.name})`, '#2563eb'));
+                    }
+                }
+                // Recorrido del trayecto (no aplica a avión, barco o ferry)
+                const mode = medio ? MEDIO_TRAVELMODE[medio] : 'transit';
+                if (mode && ev.coordsInicio && ev.coordsFin) {
+                    chainBtns.push(routeButton(buildDirectionsUrl(ev.coordsInicio, ev.coordsFin, mode), `${MEDIO_ICONS[medio] || '🧭'} Recorrido del trayecto`, '#16a34a'));
+                }
+                // De la llegada al alojamiento (solo en el último tramo; en escalas se avisa la conexión)
+                if (isLastLeg && ev.coordsFin) {
+                    const hotelAfter = getHotelSleepingOn(ev.endDate || ev.date);
+                    if (hotelAfter && hotelAfter.coords) {
+                        chainBtns.push(routeButton(buildDirectionsUrl(ev.coordsFin, hotelAfter.coords, 'transit'), `➡️🏨 De la llegada a ${hotelAfter.name}`, '#0284c7'));
+                    }
+                } else if (!isLastLeg) {
+                    const nextLeg = legs[legIdx + 1];
+                    chainBtns.push(`<span style="font-size:0.8rem; color:#92400e; font-weight:bold;">🔁 Escala: sigue con "${nextLeg.title}"</span>`);
+                }
+
+                const chainHTML = chainBtns.length > 0
+                    ? `<p style="font-weight:bold; color:#1e40af; margin:10px 0 6px 0;">🧭 Cómo llegar:</p><div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">${chainBtns.join('')}</div>`
+                    : '';
+
                 routeHTML = `
                     <div style="margin: 0.8rem 0; padding: 0.8rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; font-size: 0.85rem;">
+                        ${medioHTML}
+                        ${legsHTML}
                         <p style="font-weight:bold; color:#1e40af; margin-bottom:6px;">🚉 Terminales y Puntos de Encuentro:</p>
                         <div style="display:flex; gap:6px; flex-wrap:wrap;">
                             ${origBtn}
                             ${destBtn}
                         </div>
+                        ${chainHTML}
                     </div>`;
             } else {
                 let loc = ev.coordsInicio || ev.location || ev.title;
@@ -1428,6 +1567,7 @@
             document.getElementById('ev-location').value = ev.location || '';
             document.getElementById('ev-origin-link').value = ev.originLink || '';
             document.getElementById('ev-dest-link').value = ev.destLink || '';
+            document.getElementById('ev-medio').value = getMedio(ev); // [CAMBIO 7] los viejos con "vuelo" vienen como Avión
             document.getElementById('ev-cost').value = ev.cost || '';
             document.getElementById('ev-details').value = ev.details || '';
 
@@ -1493,6 +1633,7 @@
                 CodigoReserva: document.getElementById('ev-booking-code').value,
                 UbicacionInicio: type === 'transporte' ? document.getElementById('ev-origin-link').value : document.getElementById('ev-location').value,
                 UbicacionFin: type === 'transporte' ? document.getElementById('ev-dest-link').value : '',
+                Medio: type === 'transporte' ? document.getElementById('ev-medio').value : '', // [CAMBIO 7]
                 Costo: document.getElementById('ev-cost').value,
                 Detalles: document.getElementById('ev-details').value,
                 oldTitle: oldTitle,
@@ -1609,6 +1750,7 @@
 
                 combined.push({
                     type: e.type,
+                    icon: getEventIcon(e), // [CAMBIO 7]
                     title: e.title,
                     dateStr: formatDateStandard(e.date),
                     sortValue: timeSort,
@@ -1620,7 +1762,7 @@
             combined.sort((a, b) => a.sortValue - b.sortValue);
 
             container.innerHTML = combined.map(item => {
-                let icon = item.type === 'transporte' ? '✈️' : (item.type === 'show' ? '🎸' : (item.type === 'hotel' ? '🏨' : '📍'));
+                let icon = item.icon || (item.type === 'hotel' ? '🏨' : '📍'); // [CAMBIO 7]
                 let mapsBtn = `<a href="${item.link}" target="_blank" style="color:var(--primary); font-weight:bold; font-size:0.75rem;">🗺 Abrir en Maps</a>`;
 
                 return `
@@ -1661,64 +1803,54 @@
             renderMapMarkers();
         }
 
-        // PARSER DE COORDENADAS O GEOCODIFICADOR DIRECTO
-        async function parseOrGeocodeCoords(textOrCoords) {
-            if (!textOrCoords) return null;
-            let str = String(textOrCoords).trim();
-
-            // 1. Si son coordenadas lat,lng directas extraídas por Apps Script
-            let directMatch = str.match(/^(-?\d+\.\d+),\s*(-?\d+\.\d+)$/);
-            if (directMatch) {
-                return [parseFloat(directMatch[1]), parseFloat(directMatch[2])];
-            }
-
-            // 2. Cache
-            const cacheKey = str.toLowerCase();
-            if (geocodeCache[cacheKey]) return geocodeCache[cacheKey];
-
-            // 3. Petición a Nominatim solo si es texto de dirección
-            if (!str.startsWith('http')) {
-                try {
-                    const searchAddress = `${str}, Buenos Aires, Argentina`;
-                    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchAddress)}&limit=1`);
-                    const data = await res.json();
-                    if (data && data.length > 0) {
-                        const coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
-                        geocodeCache[cacheKey] = coords;
-                        return coords;
-                    }
-                } catch (e) {
-                    console.warn("Geocodificación fallida para:", str);
-                }
-            }
-            return null;
+        // [CAMBIO 8] Lee coordenadas "lat,lng". Ya NO busca por nombre en Nominatim:
+        // si un lugar no tiene coordenadas, no se dibuja y se avisa.
+        function parseCoords(text) {
+            if (!text) return null;
+            const m = String(text).trim().match(/^(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)$/);
+            return m ? [parseFloat(m[1]), parseFloat(m[2])] : null;
         }
 
-        async function renderMapMarkers(categoryFilter = 'all') {
+        function popupBtn(url, label, color) {
+            return `<a href="${url}" target="_blank" rel="noopener noreferrer" style="display:inline-block; background:${color}; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:0.75rem; font-weight:bold;">${label}</a>`;
+        }
+
+        function showMissingWarning(missing) {
+            const box = document.getElementById('map-missing-warning');
+            if (!box) return;
+            if (missing.length === 0) {
+                box.style.display = 'none';
+                box.innerHTML = '';
+                return;
+            }
+            box.style.display = 'block';
+            box.innerHTML = `⚠️ <b>${missing.length} lugar(es) sin ubicar en el mapa:</b> ${missing.join(', ')}.<br>
+                Para ubicarlos: abrí el evento o alojamiento → <b>Editar</b> → pegá un link de Google Maps → <b>Guardar</b>. En recomendaciones, completá <b>Coords</b> en el Sheet.`;
+        }
+
+        // [CAMBIO 7 + 8] Dibuja los pines solo con coordenadas guardadas.
+        // Transportes: pin de salida y de llegada unidos por línea punteada.
+        function renderMapMarkers(categoryFilter = 'all') {
             if (!leafletMap) return;
 
             mapMarkers.forEach(m => leafletMap.removeLayer(m));
             mapMarkers = [];
+            const missing = [];
 
             // 1. ALOJAMIENTOS
             if (categoryFilter === 'all' || categoryFilter === 'hotel') {
                 for (const acc of accommodationsData) {
-                    const coords = await parseOrGeocodeCoords(acc.coords || acc.name);
-                    if (coords) {
-                        const mapSearchUrl = acc.coords ? `https://www.google.com/maps/search/?api=1&query=${acc.coords}` : (acc.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(acc.name)}`);
-                        const marker = L.marker(coords).addTo(leafletMap);
-
-                        marker.bindPopup(`
-                            <div style="font-family:Inter, sans-serif;">
-                                <h4 style="margin:0 0 4px 0; color:#1e40af;">🏨 ${acc.name}</h4>
-                                <p style="font-size:0.8rem; color:#475569; margin-bottom:8px;">Alojamiento (${acc.start} - ${acc.end})</p>
-                                <a href="${mapSearchUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block; background:#2563eb; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:0.75rem; font-weight:bold;">
-                                    🧭 Abrir en Google Maps
-                                </a>
-                            </div>
-                        `);
-                        mapMarkers.push(marker);
-                    }
+                    const coords = parseCoords(acc.coords);
+                    if (!coords) { missing.push(`🏨 ${acc.name}`); continue; }
+                    const marker = L.marker(coords).addTo(leafletMap);
+                    marker.bindPopup(`
+                        <div style="font-family:Inter, sans-serif;">
+                            <h4 style="margin:0 0 4px 0; color:#1e40af;">🏨 ${acc.name}</h4>
+                            <p style="font-size:0.8rem; color:#475569; margin-bottom:8px;">Alojamiento (${acc.start} - ${acc.end})</p>
+                            ${popupBtn(`https://www.google.com/maps/search/?api=1&query=${acc.coords}`, '🧭 Abrir en Google Maps', '#2563eb')}
+                        </div>
+                    `);
+                    mapMarkers.push(marker);
                 }
             }
 
@@ -1726,61 +1858,85 @@
             if (categoryFilter === 'all' || categoryFilter === 'itinerario') {
                 for (const ev of localEvents) {
                     if (ev.type === 'sleep') continue;
+                    const icon = getEventIcon(ev);
+                    const when = `${ev.date} (${ev.startHour !== null ? ev.startHour + ':00hs' : 'Pendiente'})`;
 
-                    const targetLoc = ev.coordsInicio || ev.location || ev.title;
-                    const coords = await parseOrGeocodeCoords(targetLoc);
-                    if (coords) {
-                        const icon = ev.type === 'show' ? '🎸' : (ev.type === 'transporte' ? '🚌' : '📍');
-                        const marker = L.marker(coords).addTo(leafletMap);
-                        const routeFromHotelUrl = getHotelRouteUrl(targetLoc, ev.date);
+                    if (ev.type === 'transporte') {
+                        const start = parseCoords(ev.coordsInicio);
+                        const end = parseCoords(ev.coordsFin);
+                        if (!start && !end) { missing.push(`${icon} ${ev.title}`); continue; }
 
-                        marker.bindPopup(`
-                            <div style="font-family:Inter, sans-serif;">
-                                <h4 style="margin:0 0 4px 0; color:#1e293b;">${icon} ${ev.title}</h4>
-                                <p style="font-size:0.8rem; color:#475569; margin-bottom:8px;">${ev.date} (${ev.startHour !== null ? ev.startHour + ':00hs' : 'Pendiente'})</p>
-                                <div style="display:flex; gap:4px; flex-wrap:wrap;">
-                                    <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(targetLoc)}" target="_blank" style="display:inline-block; background:#2563eb; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:0.75rem; font-weight:bold;">
-                                        🧭 Abrir en Maps
-                                    </a>
-                                    <a href="${routeFromHotelUrl}" target="_blank" style="display:inline-block; background:#0284c7; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:0.75rem; font-weight:bold;">
-                                        🚗 Ruta desde Hotel
-                                    </a>
+                        if (start) {
+                            const m1 = L.marker(start).addTo(leafletMap);
+                            m1.bindPopup(`
+                                <div style="font-family:Inter, sans-serif;">
+                                    <h4 style="margin:0 0 4px 0; color:#1e293b;">${icon} ${ev.title}</h4>
+                                    <p style="font-size:0.8rem; color:#475569; margin-bottom:8px;">🛫 Salida · ${when}</p>
+                                    ${popupBtn(`https://www.google.com/maps/search/?api=1&query=${ev.coordsInicio}`, '🧭 Abrir en Maps', '#2563eb')}
                                 </div>
-                            </div>
-                        `);
-                        mapMarkers.push(marker);
+                            `);
+                            mapMarkers.push(m1);
+                        }
+                        if (end) {
+                            const m2 = L.marker(end).addTo(leafletMap);
+                            m2.bindPopup(`
+                                <div style="font-family:Inter, sans-serif;">
+                                    <h4 style="margin:0 0 4px 0; color:#1e293b;">${icon} ${ev.title}</h4>
+                                    <p style="font-size:0.8rem; color:#475569; margin-bottom:8px;">🛬 Llegada · ${ev.endDate || ev.date} (${ev.endHour !== null && ev.endHour !== undefined ? ev.endHour + ':00hs' : ''})</p>
+                                    ${popupBtn(`https://www.google.com/maps/search/?api=1&query=${ev.coordsFin}`, '🧭 Abrir en Maps', '#2563eb')}
+                                </div>
+                            `);
+                            mapMarkers.push(m2);
+                        }
+                        if (start && end) {
+                            const line = L.polyline([start, end], { color: '#16a34a', weight: 3, opacity: 0.8, dashArray: '8, 8' }).addTo(leafletMap);
+                            line.bindPopup(`<b>${icon} ${ev.title}</b><br>${when}`);
+                            mapMarkers.push(line);
+                        }
+                        continue;
                     }
+
+                    const coords = parseCoords(ev.coordsInicio);
+                    if (!coords) { missing.push(`${icon} ${ev.title}`); continue; }
+                    const marker = L.marker(coords).addTo(leafletMap);
+                    const routeFromHotelUrl = getHotelRouteUrl(ev.coordsInicio, ev.date);
+                    marker.bindPopup(`
+                        <div style="font-family:Inter, sans-serif;">
+                            <h4 style="margin:0 0 4px 0; color:#1e293b;">${icon} ${ev.title}</h4>
+                            <p style="font-size:0.8rem; color:#475569; margin-bottom:8px;">${when}</p>
+                            <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                                ${popupBtn(`https://www.google.com/maps/search/?api=1&query=${ev.coordsInicio}`, '🧭 Abrir en Maps', '#2563eb')}
+                                ${popupBtn(routeFromHotelUrl, '🚗 Ruta desde Hotel', '#0284c7')}
+                            </div>
+                        </div>
+                    `);
+                    mapMarkers.push(marker);
                 }
             }
 
             // 3. RECOMENDACIONES
             if (categoryFilter === 'all' || categoryFilter === 'recom') {
                 for (const rec of recomendationsData) {
-                    const targetLoc = rec.Coords || rec.LinkGoogleMaps || rec.Ubicacion || rec.Titulo;
-                    const coords = await parseOrGeocodeCoords(targetLoc);
-                    if (coords) {
-                        const marker = L.marker(coords).addTo(leafletMap);
-                        const mapsUrl = rec.Coords ? `https://www.google.com/maps/search/?api=1&query=${rec.Coords}` : (rec.LinkGoogleMaps || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(rec.Ubicacion)}`);
-                        const routeFromHotelUrl = getHotelRouteUrl(targetLoc, rec.FechaTentativa || '');
-
-                        marker.bindPopup(`
-                            <div style="font-family:Inter, sans-serif;">
-                                <h4 style="margin:0 0 4px 0; color:#0284c7;">💡 ${rec.Titulo || rec.title}</h4>
-                                <p style="font-size:0.8rem; color:#475569; margin-bottom:8px;">${rec.Tipo || 'Recomendación'}</p>
-                                <div style="display:flex; gap:4px; flex-wrap:wrap;">
-                                    <a href="${mapsUrl}" target="_blank" style="display:inline-block; background:#0284c7; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:0.75rem; font-weight:bold;">
-                                        🧭 Abrir en Maps
-                                    </a>
-                                    <a href="${routeFromHotelUrl}" target="_blank" style="display:inline-block; background:#2563eb; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:0.75rem; font-weight:bold;">
-                                        🚗 Ruta desde Hotel
-                                    </a>
-                                </div>
+                    const title = rec.Titulo || rec.title || 'Recomendación';
+                    const coords = parseCoords(rec.Coords);
+                    if (!coords) { missing.push(`💡 ${title}`); continue; }
+                    const marker = L.marker(coords).addTo(leafletMap);
+                    const routeFromHotelUrl = getHotelRouteUrl(rec.Coords, rec.FechaTentativa || '');
+                    marker.bindPopup(`
+                        <div style="font-family:Inter, sans-serif;">
+                            <h4 style="margin:0 0 4px 0; color:#0284c7;">💡 ${title}</h4>
+                            <p style="font-size:0.8rem; color:#475569; margin-bottom:8px;">${rec.Tipo || 'Recomendación'}</p>
+                            <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                                ${popupBtn(`https://www.google.com/maps/search/?api=1&query=${rec.Coords}`, '🧭 Abrir en Maps', '#0284c7')}
+                                ${popupBtn(routeFromHotelUrl, '🚗 Ruta desde Hotel', '#2563eb')}
                             </div>
-                        `);
-                        mapMarkers.push(marker);
-                    }
+                        </div>
+                    `);
+                    mapMarkers.push(marker);
                 }
             }
+
+            showMissingWarning(missing);
         }
 
         function filterMapMarkers(cat, evt) {
