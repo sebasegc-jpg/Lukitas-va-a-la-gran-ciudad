@@ -38,7 +38,7 @@
 
         @media (min-width: 1024px) {
             body {
-                background-size: 630px 100vh, 630px 100vh;
+                background-size: 610px 100vh, 610px 100vh;
                 background-repeat: no-repeat, no-repeat;
                 background-position: left top, right top;
                 background-attachment: fixed, fixed;
@@ -192,10 +192,11 @@
             /* Un poco más de espacio útil dentro de cada pestaña */
             .tab-inner-container { padding: 0.75rem; }
 
-            /* Semanas: una sola fila deslizable de costado */
-            .week-selector { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 0.2rem; }
-            .week-selector::-webkit-scrollbar { display: none; }
-            .week-btn { flex-shrink: 0; white-space: nowrap; font-size: 0.8rem; }
+            /* Semanas: grilla de 2 por renglón, siempre dentro de la tarjeta */
+            .schedule-controls > div { width: 100%; min-width: 0; }
+            .week-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+            .week-selector > span { grid-column: 1 / -1; }
+            .week-btn { white-space: nowrap; font-size: 0.8rem; padding: 0.4rem 0.3rem; text-align: center; }
             .week-label-long { display: none; }
             .week-label-short { display: inline; }
 
