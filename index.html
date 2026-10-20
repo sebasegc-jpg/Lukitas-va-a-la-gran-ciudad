@@ -38,7 +38,7 @@
 
         @media (min-width: 1024px) {
             body {
-                background-size: 590px 100vh, 590px 100vh;
+                background-size: 595px 100vh, 595px 100vh;
                 background-repeat: no-repeat, no-repeat;
                 background-position: left top, right top;
                 background-attachment: fixed, fixed;
@@ -2052,6 +2052,13 @@
             }
             if (lblP1) lblP1.innerText = `Total Pagado por ${p1Name}:`;
             if (lblP2) lblP2.innerText = `Total Pagado por ${p2Name}:`;
+
+            // [CAMBIO 11] Opciones de división con los nombres de los viajeros
+            const splitSel = document.getElementById('exp-split');
+            if (splitSel) {
+                splitSel.options[1].text = `Solo de ${p1Name} (no se divide)`;
+                splitSel.options[2].text = `Solo de ${p2Name} (no se divide)`;
+            }
         }
 
         function resetTravelers() {
@@ -2074,6 +2081,8 @@
                 let totalP2USD = 0;
                 let totalP1ARS = 0;
                 let totalP2ARS = 0;
+                // [CAMBIO 11] Cuánto le corresponde pagar a Viajero 1 según "¿Cómo se divide?"
+                let shareP1ARS = 0;
 
                 const p1Name = traveler1 || "Lukitas";
                 const p2Name = traveler2 || "Acompañante";
@@ -2099,6 +2108,17 @@
                             totalP2ARS += amountARS;
                         }
 
+                        // [CAMBIO 11] Parte que le toca a Viajero 1 en este gasto
+                        const split = exp.DivididoPor || 'both';
+                        if (split === 'p1_only') {
+                            shareP1ARS += amountARS;          // todo es de Viajero 1
+                        } else if (split === 'p2_only') {
+                            shareP1ARS += 0;                  // todo es de Viajero 2
+                        } else {
+                            shareP1ARS += amountARS / 2;      // compartido 50/50
+                        }
+                        const splitLabel = split === 'p1_only' ? `solo ${p1Name}` : (split === 'p2_only' ? `solo ${p2Name}` : 'compartido');
+
                         const safeConcept = String(exp.Concepto || '').replace(/'/g, "\\'");
                         const safeDate = String(exp.Fecha || '').replace(/'/g, "\\'");
 
@@ -2108,7 +2128,7 @@
                             <td><b>${exp.Concepto || ''}</b></td>
                             <td>$${Math.round(amountARS).toLocaleString('es-AR')} ARS</td>
                             <td>$${amountUSD.toFixed(2)} USD</td>
-                            <td>${payer}</td>
+                            <td>${payer}<br><span style="font-size:0.72rem; color:var(--text-muted);">${splitLabel}</span></td>
                             <td>${exp.Categoria || ''}</td>
                             <td>
                                 <button onclick="editExpenseRow('${safeConcept}', '${safeDate}')" style="background:#0284c7; color:white; border:none; padding:2px 6px; border-radius:3px; cursor:pointer; font-weight:bold;">✏️</button>
@@ -2126,13 +2146,15 @@
                 document.getElementById('total-trip-usd').innerText = `$${(totalP1USD + totalP2USD).toFixed(2)} USD`;
 
                 const settlementText = document.getElementById('settlement-text');
-                const diffARS = totalP1ARS - totalP2ARS;
-                if (Math.abs(diffARS) < 10) {
+                // [CAMBIO 11] Saldo = lo que pagó Viajero 1 menos lo que le correspondía pagar.
+                // Positivo: Viajero 2 le debe a Viajero 1. Negativo: al revés.
+                const balanceARS = totalP1ARS - shareP1ARS;
+                if (Math.abs(balanceARS) < 10) {
                     settlementText.innerText = "Cuentas saldadas (0 ARS)";
-                } else if (diffARS > 0) {
-                    settlementText.innerText = `${p2Name} le debe $${Math.round(diffARS / 2).toLocaleString('es-AR')} ARS a ${p1Name}`;
+                } else if (balanceARS > 0) {
+                    settlementText.innerText = `${p2Name} le debe $${Math.round(balanceARS).toLocaleString('es-AR')} ARS a ${p1Name}`;
                 } else {
-                    settlementText.innerText = `${p1Name} le debe $${Math.round(Math.abs(diffARS) / 2).toLocaleString('es-AR')} ARS a ${p2Name}`;
+                    settlementText.innerText = `${p1Name} le debe $${Math.round(Math.abs(balanceARS)).toLocaleString('es-AR')} ARS a ${p2Name}`;
                 }
             } catch (e) {
                 console.error("Error al cargar gastos:", e);
