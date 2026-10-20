@@ -38,7 +38,7 @@
 
         @media (min-width: 1024px) {
             body {
-                background-size: 595px 100vh, 595px 100vh;
+                background-size: 592px 100vh, 592px 100vh;
                 background-repeat: no-repeat, no-repeat;
                 background-position: left top, right top;
                 background-attachment: fixed, fixed;
@@ -1071,6 +1071,135 @@
             return `<a href="${url}" target="_blank" style="display:inline-block; background:${color}; color:white; padding:6px 10px; border-radius:4px; font-weight:bold; text-decoration:none; font-size:0.78rem;">${label}</a>`;
         }
 
+        // ===== [CAMBIO 12] CADENA DEL DÍA PARA ACTIVIDADES =====
+
+        // Mismo día (compara solo la fecha)
+        function sameDay(a, b) {
+            const da = parseDateStr(a), db = parseDateStr(b);
+            return !!(da && db && formatDateToISO(da) === formatDateToISO(db));
+        }
+
+        // Lo que pasó justo antes de este evento, el mismo día.
+        // Devuelve { label, coords } o null. Si fue un transporte, toma su punto de llegada.
+        function getPreviousStop(ev) {
+            if (ev.startHour === null) return null;
+            let best = null, bestHour = -1;
+            localEvents.forEach(e => {
+                if (e === ev || e.type === 'sleep') return;
+                if (e.type === 'transporte') {
+                    const arrDate = e.endDate || e.date;
+                    const arrHour = (e.endHour !== null && e.endHour !== undefined && !isNaN(e.endHour)) ? e.endHour : e.startHour;
+                    if (arrHour === null || !sameDay(arrDate, ev.date) || arrHour > ev.startHour) return;
+                    if (arrHour >= bestHour && e.coordsFin) {
+                        bestHour = arrHour;
+                        best = { label: `${getEventIcon(e)} llegada de "${e.title}"`, coords: e.coordsFin, isTransport: true };
+                    }
+                } else {
+                    if (e.startHour === null || !sameDay(e.date, ev.date) || e.startHour >= ev.startHour) return;
+                    if (e.startHour >= bestHour && e.coordsInicio) {
+                        bestHour = e.startHour;
+                        best = { label: `${getEventIcon(e)} ${e.title}`, coords: e.coordsInicio, isTransport: false };
+                    }
+                }
+            });
+            return best;
+        }
+
+        // ¿Hubo un transporte que llegó este día antes del evento? (para saber si ya cambiaste de hotel)
+        function arrivedByTransportToday(ev) {
+            return localEvents.some(e => e.type === 'transporte' && sameDay(e.endDate || e.date, ev.date) &&
+                (ev.startHour === null || (e.endHour !== null && e.endHour <= ev.startHour)));
+        }
+
+        // Alojamiento "de referencia" para ese momento del día
+        function getHotelForEvent(ev) {
+            const before = getHotelSleptBefore(ev.date);
+            const tonight = getHotelSleepingOn(ev.date);
+            if (arrivedByTransportToday(ev)) return tonight || before;
+            return before || tonight;
+        }
+
+        // ¿Es lo último del día? (no hay otro evento ni transporte más tarde ese mismo día)
+        function isLastOfDay(ev) {
+            if (ev.startHour === null) return false;
+            return !localEvents.some(e => e !== ev && e.type !== 'sleep' && e.startHour !== null &&
+                sameDay(e.date, ev.date) && e.startHour > ev.startHour);
+        }
+
+        // Todos los lugares guardados con coordenadas, para el desplegable "Otro lugar"
+        function buildPlacesOptions(excludeCoords) {
+            let html = '<option value="">-- Elegir otro lugar guardado --</option>';
+            const seen = new Set([excludeCoords]);
+            const add = (coords, label) => {
+                if (!coords || seen.has(coords)) return;
+                seen.add(coords);
+                html += `<option value="${coords}">${label}</option>`;
+            };
+            html += '<optgroup label="🏨 Alojamientos">';
+            accommodationsData.forEach(a => add(a.coords, `🏨 ${a.name}`));
+            html += '</optgroup><optgroup label="📅 Itinerario">';
+            localEvents.forEach(e => {
+                if (e.type === 'sleep') return;
+                if (e.type === 'transporte') {
+                    add(e.coordsInicio, `${getEventIcon(e)} ${e.title} (salida)`);
+                    add(e.coordsFin, `${getEventIcon(e)} ${e.title} (llegada)`);
+                } else {
+                    add(e.coordsInicio, `${getEventIcon(e)} ${e.title}`);
+                }
+            });
+            html += '</optgroup><optgroup label="💡 Recomendaciones">';
+            recomendationsData.forEach(r => add(r.Coords, `💡 ${r.Titulo || r.title || ''}`));
+            html += '</optgroup>';
+            return html;
+        }
+
+        // Abre la ruta desde el lugar elegido en el desplegable
+        function openRouteFromSelect(destCoords) {
+            const sel = document.getElementById('route-origin-select');
+            if (!sel || !sel.value) { alert('Elegí un lugar de salida.'); return; }
+            window.open(buildDirectionsUrl(sel.value, destCoords, 'transit'), '_blank');
+        }
+
+        // Arma la sección "Cómo llegar" de una actividad o show
+        function buildHowToGetThereHTML(ev) {
+            const dest = ev.coordsInicio;
+            const box = inner => `<div style="margin: 0.8rem 0; padding: 0.8rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; font-size: 0.85rem;">
+                <p style="font-weight:bold; color:#1e40af; margin-bottom:6px;">🧭 Cómo llegar:</p>${inner}</div>`;
+
+            if (!dest) {
+                return box(`<p style="color:#b45309;">Este evento no tiene coordenadas. Editalo y pegá un link de Google Maps para ver rutas.</p>`);
+            }
+
+            const btns = [];
+            const prev = getPreviousStop(ev);
+            if (prev && prev.coords !== dest) {
+                btns.push(routeButton(buildDirectionsUrl(prev.coords, dest, 'transit'), `Desde ${prev.label}`, '#16a34a'));
+            }
+            const hotel = getHotelForEvent(ev);
+            if (hotel && hotel.coords && hotel.coords !== dest) {
+                btns.push(routeButton(buildDirectionsUrl(hotel.coords, dest, 'transit'), `🏨 Desde ${hotel.name}`, '#2563eb'));
+            }
+
+            let backHTML = '';
+            if (isLastOfDay(ev)) {
+                const tonight = getHotelSleepingOn(ev.date);
+                if (tonight && tonight.coords && tonight.coords !== dest) {
+                    backHTML = `<div style="margin-top:8px;">${routeButton(buildDirectionsUrl(dest, tonight.coords, 'transit'), `🌙 Volver a ${tonight.name}`, '#7c3aed')}</div>`;
+                }
+            }
+
+            const quick = btns.length > 0
+                ? `<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">${btns.join('')}</div>`
+                : '';
+
+            const other = `<div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+                    <select id="route-origin-select" style="flex:1; min-width:180px; padding:0.35rem; border:1px solid var(--border); border-radius:4px; font-size:0.8rem;">${buildPlacesOptions(dest)}</select>
+                    <button onclick="openRouteFromSelect('${dest}')" style="background:#0284c7; color:white; border:none; padding:6px 10px; border-radius:4px; font-weight:bold; font-size:0.78rem; cursor:pointer;">🧭 Abrir ruta</button>
+                </div>`;
+
+            return box(quick + other + backHTML);
+        }
+
         function getHotelForDate(dateStr) {
             if (!accommodationsData || accommodationsData.length === 0) return null;
             let targetObj = parseDateStr(dateStr);
@@ -1578,10 +1707,8 @@
                 let loc = ev.coordsInicio || ev.location || ev.title;
                 let locLink = `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}" target="_blank" style="color:#1d4ed8; text-decoration:underline;">📍 Abrir Ubicación</a>`;
 
-                let routeFromHotelUrl = getHotelRouteUrl(loc, ev.date);
-                let hotelRouteBtn = `<a href="${routeFromHotelUrl}" target="_blank" style="display:inline-block; margin-left:8px; background:#0284c7; color:white; padding:4px 8px; border-radius:4px; font-weight:bold; text-decoration:none; font-size:0.75rem;">🚗 Ruta desde Hotel</a>`;
-
-                routeHTML = `<p><b>Ubicación:</b> ${locLink} ${hotelRouteBtn}</p>`;
+                // [CAMBIO 12] Cómo llegar con la cadena del día
+                routeHTML = `<p><b>Ubicación:</b> ${locLink}</p>` + buildHowToGetThereHTML(ev);
             }
 
             let arrivalInfo = (ev.endDate) ? `<p><b>Llegada / Fin:</b> ${ev.endDate} ${ev.endHour || 0}:00hs</p>` : '';
