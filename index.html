@@ -38,7 +38,7 @@
 
         @media (min-width: 1024px) {
             body {
-                background-size: 600px 100vh, 600px 100vh;
+                background-size: 590px 100vh, 590px 100vh;
                 background-repeat: no-repeat, no-repeat;
                 background-position: left top, right top;
                 background-attachment: fixed, fixed;
@@ -616,10 +616,11 @@
     <div class="modal" id="recomModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>➕ Agregar Nueva Recomendación / Lugar</h3>
+                <h3 id="recomModalTitle">➕ Agregar Nueva Recomendación / Lugar</h3>
                 <button class="close-btn" onclick="closeModal('recomModal')">&times;</button>
             </div>
-            <form onsubmit="saveRecomForm(event)">
+            <form id="recomForm" onsubmit="saveRecomForm(event)">
+                <input type="hidden" id="rec-old-title" value=""><!-- [CAMBIO 10] título original al editar -->
                 <div class="form-group">
                     <label>Título / Nombre del Lugar:</label>
                     <input type="text" id="rec-title" required placeholder="Ej: Bodegón Don Julio / Fito Páez en Movistar Arena">
@@ -1102,7 +1103,7 @@
                 const data = await res.json();
                 if (Array.isArray(data) && data.length > 0) {
                     recomendationsData = data;
-                    container.innerHTML = data.map(item => {
+                    container.innerHTML = data.map((item, recIdx) => {
                         const title = item.Titulo || item.title || 'Recomendación';
                         const tipo = item.Tipo || 'Recomendación';
                         const ubicacion = item.Ubicacion || '';
@@ -1135,6 +1136,13 @@
                                         ${hotelRouteBtn}
                                         <button onclick="promoteToItinerary('${safeTitle}', '${safeLoc}', '${safeDet}')" style="background:var(--primary); color:white; border:none; padding:4px 8px; border-radius:4px; font-weight:bold; cursor:pointer;">
                                             ➕ Pasar al Itinerario
+                                        </button>
+                                        <!-- [CAMBIO 10] Editar / Eliminar recomendación -->
+                                        <button onclick="editRecom(${recIdx})" style="background:#0284c7; color:white; border:none; padding:4px 8px; border-radius:4px; font-weight:bold; cursor:pointer;">
+                                            ✏️ Editar
+                                        </button>
+                                        <button onclick="deleteRecom(${recIdx})" style="background:#ef4444; color:white; border:none; padding:4px 8px; border-radius:4px; font-weight:bold; cursor:pointer;">
+                                            🗑 Eliminar
                                         </button>
                                     </div>
                                 </div>
@@ -1200,9 +1208,64 @@
         }
 
         function openAddRecomModal() {
+            // [CAMBIO 10] Formulario limpio en modo "agregar"
+            document.getElementById('recomForm').reset();
+            document.getElementById('rec-old-title').value = '';
+            document.getElementById('recomModalTitle').innerText = '➕ Agregar Nueva Recomendación / Lugar';
             document.getElementById('recomModal').style.display = 'flex';
         }
 
+        // [CAMBIO 10] Abre el formulario cargado con los datos de la recomendación
+        function editRecom(idx) {
+            const rec = recomendationsData[idx];
+            if (!rec) return;
+            const title = rec.Titulo || rec.title || '';
+
+            document.getElementById('recomForm').reset();
+            document.getElementById('recomModalTitle').innerText = '✏️ Editar Recomendación';
+            document.getElementById('rec-old-title').value = title;
+            document.getElementById('rec-title').value = title;
+
+            // Si el tipo guardado no está en la lista, se agrega para no perderlo
+            const typeSel = document.getElementById('rec-type');
+            const tipo = rec.Tipo || '';
+            if (tipo && !Array.from(typeSel.options).some(o => o.value === tipo)) {
+                typeSel.add(new Option(tipo, tipo));
+            }
+            if (tipo) typeSel.value = tipo;
+
+            document.getElementById('rec-date').value = rec.FechaTentativa ? formatDateToISO(parseDateStr(rec.FechaTentativa)) : '';
+            document.getElementById('rec-location').value = rec.Ubicacion || '';
+            // Si no tiene link pero sí coordenadas (cargadas a mano), se usan las coordenadas
+            // para que al guardar no se pierdan.
+            document.getElementById('rec-link').value = rec.LinkGoogleMaps || rec.Coords || '';
+            document.getElementById('rec-details').value = rec.Detalles || '';
+
+            document.getElementById('recomModal').style.display = 'flex';
+        }
+
+        // [CAMBIO 10] Elimina la recomendación y recarga la lista y el mapa
+        async function deleteRecom(idx) {
+            const rec = recomendationsData[idx];
+            if (!rec) return;
+            const title = rec.Titulo || rec.title || '';
+            if (!confirm(`¿Seguro que querés eliminar la recomendación "${title}"?`)) return;
+
+            try {
+                const res = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'delete', sheet: 'Recomendaciones', title: title })
+                });
+                const msg = await res.text();
+                if (msg.startsWith('Error')) throw new Error(msg);
+                await loadRecomendacionesFromSheet();
+                if (leafletMap) renderMapMarkers();
+            } catch (err) {
+                alert('No se pudo eliminar la recomendación: ' + err.message);
+            }
+        }
+
+        // [CAMBIO 10] Guarda (nueva o editada), espera al Sheet y recarga lista y mapa
         async function saveRecomForm(e) {
             e.preventDefault();
             const recomData = {
@@ -1212,16 +1275,29 @@
                 FechaTentativa: formatDateStandard(document.getElementById('rec-date').value),
                 Ubicacion: document.getElementById('rec-location').value,
                 LinkGoogleMaps: document.getElementById('rec-link').value,
-                Detalles: document.getElementById('rec-details').value
+                Detalles: document.getElementById('rec-details').value,
+                oldTitle: document.getElementById('rec-old-title').value
             };
 
-            fetch(SCRIPT_URL, {
-                method: "POST",
-                body: JSON.stringify(recomData)
-            }).then(() => {
-                loadRecomendacionesFromSheet();
+            const submitBtn = e.submitter || document.querySelector('#recomForm button[type="submit"]');
+            const originalBtnText = submitBtn ? submitBtn.innerText : '';
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerText = '⏳ Guardando...'; }
+
+            try {
+                const res = await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(recomData) });
+                const msg = await res.text();
+                if (msg.startsWith('Error')) throw new Error(msg);
+
+                await loadRecomendacionesFromSheet();
+                if (leafletMap) renderMapMarkers();
                 closeModal('recomModal');
-            });
+                document.getElementById('recomForm').reset();
+                document.getElementById('rec-old-title').value = '';
+            } catch (err) {
+                alert('No se pudo guardar la recomendación: ' + err.message);
+            } finally {
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = originalBtnText; }
+            }
         }
 
         function promoteToItinerary(title, location, details) {
