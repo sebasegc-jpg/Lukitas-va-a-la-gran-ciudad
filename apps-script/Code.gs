@@ -294,36 +294,10 @@ function probarCoords() {
   Logger.log('Coordenadas detectadas: ' + resolveGoogleMapsCoords(link));
 }
 
-// Diagnóstico: muestra cada salto de redirección de un link. NO escribe en el Sheet.
+// Diagnóstico: muestra cada salto de redirección de un link y busca coordenadas en varios formatos.
+// NO escribe en el Sheet. Reemplazar el link de ejemplo por el que se quiera revisar.
 function diagnosticarLink() {
   var link = 'https://maps.app.goo.gl/3npcg51vywo9iYdY9?g_st=ac';
-  var options = {
-    followRedirects: false,
-    muteHttpExceptions: true,
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-    }
-  };
-  var url = link;
-  for (var hop = 0; hop < 6; hop++) {
-    var resp = UrlFetchApp.fetch(url, options);
-    var headers = resp.getHeaders();
-    var location = headers['Location'] || headers['location'] || '';
-    Logger.log('Salto ' + hop + ' | código ' + resp.getResponseCode() + ' | Location: ' + location);
-    if (!location) {
-      var texto = resp.getContentText();
-      Logger.log('Sin más redirecciones. Coords encontradas en la página: "' + extraerCoordsDeTexto(texto) + '"');
-      Logger.log('Primeros 300 caracteres de la página: ' + texto.substring(0, 300));
-      break;
-    }
-    url = location;
-  }
-  Logger.log('Resultado de resolveGoogleMapsCoords: "' + resolveGoogleMapsCoords(link) + '"');
-}
-// Diagnóstico: muestra cada salto de redirección de un link y busca coordenadas en varios formatos.
-// NO escribe en el Sheet.
-function diagnosticarLink() {
-  var link = 'https://maps.app.goo.gl/phY1r4YLacR9Jeiq5';
   var options = {
     followRedirects: false,
     muteHttpExceptions: true,
