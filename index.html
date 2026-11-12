@@ -1062,9 +1062,24 @@
             const code = String(ev.bookingCode || '').trim().toLowerCase();
             if (!code) return [ev];
             const legs = localEvents.filter(e => e.type === 'transporte' && String(e.bookingCode || '').trim().toLowerCase() === code);
-            const sortKey = e => { const d = parseDateStr(e.date); return (d ? d.getTime() : 0) + (e.startHour || 0) * 3600000; };
-            legs.sort((a, b) => sortKey(a) - sortKey(b));
-            return legs.length > 0 ? legs : [ev];
+            const startTs = e => { const d = parseDateStr(e.date); return (d ? d.getTime() : 0) + (e.startHour || 0) * 3600000; };
+            const endTs = e => {
+                const d = parseDateStr(e.endDate || e.date);
+                const h = (e.endHour !== null && e.endHour !== undefined && !isNaN(e.endHour)) ? e.endHour : (e.startHour || 0);
+                return (d ? d.getTime() : 0) + h * 3600000;
+            };
+            legs.sort((a, b) => startTs(a) - startTs(b));
+
+            // [CAMBIO 13] Un mismo código puede ser ida y vuelta. Solo es ESCALA si el tramo
+            // siguiente sale menos de 24 horas después de que llegó el anterior.
+            const MAX_ESCALA_MS = 24 * 3600000;
+            const groups = [];
+            legs.forEach(l => {
+                const last = groups.length ? groups[groups.length - 1] : null;
+                if (last && startTs(l) - endTs(last[last.length - 1]) < MAX_ESCALA_MS) last.push(l);
+                else groups.push([l]);
+            });
+            return groups.find(g => g.includes(ev)) || [ev];
         }
 
         function routeButton(url, label, color) {
