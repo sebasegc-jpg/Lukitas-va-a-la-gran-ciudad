@@ -238,14 +238,17 @@ function resolveGoogleMapsCoords(urlOrText) {
 
 // Busca coordenadas dentro de un texto o URL de Google Maps.
 // [CAMBIO 5] Prioriza !3d!4d (punto exacto del lugar) sobre @ (centro de la pantalla).
+// [CAMBIO 14] Reconoce pines marcados a mano: /maps/search/-34.55,+-58.41
 function extraerCoordsDeTexto(texto) {
   if (!texto) return "";
   var t = String(texto);
   var m = t.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) ||
-          t.match(/query=(-?\d+\.\d+)(?:%2C|,)(-?\d+\.\d+)/) ||
+          t.match(/\/maps\/(?:search|place)\/(-?\d+\.\d+)(?:,|%2C)(?:\+|%20|\s)*(-?\d+\.\d+)/) ||
+          t.match(/[?&](?:query|q)=(-?\d+\.\d+)(?:,|%2C)(?:\+|%20|\s)*(-?\d+\.\d+)/) ||
           t.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
   return m ? m[1] + "," + m[2] : "";
 }
+
 
 // [CAMBIO 3] Saca el nombre/dirección del lugar de una URL de Google Maps.
 // Ej: .../maps/place/Abasto+Shopping,+Av.+Corrientes+3247,.../data=...  ->  "Abasto Shopping, Av. Corrientes 3247, ..."
@@ -297,7 +300,7 @@ function probarCoords() {
 // Diagnóstico: muestra cada salto de redirección de un link y busca coordenadas en varios formatos.
 // NO escribe en el Sheet. Reemplazar el link de ejemplo por el que se quiera revisar.
 function diagnosticarLink() {
-  var link = 'https://maps.app.goo.gl/3npcg51vywo9iYdY9?g_st=ac';
+  var link = 'https://maps.app.goo.gl/74QNKXinRhHEVazU8';
   var options = {
     followRedirects: false,
     muteHttpExceptions: true,
